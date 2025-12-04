@@ -1,0 +1,28 @@
+import { User } from '../users/user.entity';
+import { Department } from '../departments/department.entity';
+export declare class Company {
+    id: string;
+    name: string;
+    website: string;
+    industry: string;
+    size: string;
+    logo: string;
+    email: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    country: string;
+    phone: string;
+    timezone: string;
+    currency: string;
+    workingDays: string[];
+    workingHoursStart: string;
+    workingHoursEnd: string;
+    enableTimeTracking: boolean;
+    enableScreenMonitoring: boolean;
+    enablePayroll: boolean;
+    users: User[];
+    departments: Department[];
+    createdAt: Date;
+    updatedAt: Date;
+}
