@@ -1,0 +1,254 @@
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Between } from 'typeorm';
+import { Attendance } from './attendance.entity';
+import { CheckInDto, CheckOutDto, CreateAttendanceDto } from './dto/attendance.dto';
+
+@Injectable()
+export class AttendanceService {
+    constructor(
+        @InjectRepository(Attendance)
+        private attendanceRepository: Repository<Attendance>,
+    ) { }
+
+    async checkIn(checkInDto: CheckInDto): Promise<Attendance> {
+        const today = new Date().toISOString().split('T')[0];
+
+        // Check if already checked in today
+        const existing = await this.attendanceRepository.findOne({
+            where: {
+                employeeId: checkInDto.employeeId,
+                date: today as any,
+            },
+        });
+
+        if (existing) {
+            throw new BadRequestException('Already checked in today');
+        }
+
+        const now = new Date();
+        const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+        // Determine status based on company settings (mocked for now, ideally fetch from company)
+        // Default start time 09:00:00
+        let status = 'present';
+        const startHour = 9;
+        const startMinute = 0;
+
+        if (now.getHours() > startHour || (now.getHours() === startHour && now.getMinutes() > startMinute + 15)) {
+            status = 'late';
+        }
+
+        const attendance = this.attendanceRepository.create({
+            employeeId: checkInDto.employeeId,
+            date: today, // Save as string YYYY-MM-DD
+            checkInTime,
+            status,
+            location: checkInDto.location,
+            notes: checkInDto.notes,
+        });
+
+        return this.attendanceRepository.save(attendance);
+    }
+
+    async checkOut(checkOutDto: CheckOutDto): Promise<Attendance> {
+        const attendance = await this.attendanceRepository.findOne({
+            where: { id: checkOutDto.attendanceId },
+        });
+
+        if (!attendance) {
+            throw new NotFoundException('Attendance record not found');
+        }
+
+        if (attendance.checkOutTime) {
+            throw new BadRequestException('Already checked out');
+        }
+
+        const now = new Date();
+        const checkOutTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+        // Calculate work hours
+        if (attendance.checkInTime) {
+            const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);
+            const checkOut = new Date(`2000-01-01 ${checkOutTime}`);
+            const workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
+            attendance.workHours = Math.round(workHours * 100) / 100;
+
+            // Overtime logic (assuming 8 hours standard)
+            if (attendance.workHours > 8) {
+                attendance.overtime = Math.round((attendance.workHours - 8) * 100) / 100;
+            }
+        }
+
+        attendance.checkOutTime = checkOutTime;
+
+        // Early departure logic
+        // Default end time 17:00:00 (5 PM)
+        const endHour = 17;
+        if (now.getHours() < endHour) {
+            // Only change status if it wasn't already 'late' or 'absent'
+            if (attendance.status === 'present') {
+                attendance.status = 'early_departure';
+            }
+        }
+
+        if (checkOutDto.notes) {
+            attendance.notes = checkOutDto.notes;
+        }
+
+        return this.attendanceRepository.save(attendance);
+    }
+
+    async create(createAttendanceDto: CreateAttendanceDto): Promise<Attendance> {
+        const attendance = this.attendanceRepository.create(createAttendanceDto);
+
+        if (attendance.checkInTime && attendance.checkOutTime) {
+            const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);
+            const checkOut = new Date(`2000-01-01 ${attendance.checkOutTime}`);
+            const workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
+            attendance.workHours = Math.round(workHours * 100) / 100;
+        }
+
+        return this.attendanceRepository.save(attendance);
+    }
+
+    async findAll(filters?: any): Promise<Attendance[]> {
+        const query = this.attendanceRepository.createQueryBuilder('attendance')
+            .leftJoinAndSelect('attendance.employee', 'employee')
+            .leftJoinAndSelect('employee.user', 'user')
+            .leftJoinAndSelect('employee.company', 'company');
+
+        if (filters?.companyId) {
+            query.andWhere('employee.companyId = :companyId', { companyId: filters.companyId });
+        }
+
+        if (filters?.employeeId) {
+            query.andWhere('attendance.employeeId = :employeeId', { employeeId: filters.employeeId });
+        }
+
+        if (filters?.startDate && filters?.endDate) {
+            query.andWhere('attendance.date BETWEEN :startDate AND :endDate', {
+                startDate: filters.startDate,
+                endDate: filters.endDate,
+            });
+        }
+
+        if (filters?.status) {
+            query.andWhere('attendance.status = :status', { status: filters.status });
+        }
+
+        query.orderBy('attendance.date', 'DESC');
+
+        return query.getMany();
+    }
+
+    async findOne(id: string): Promise<Attendance | null> {
+        return this.attendanceRepository.findOne({
+            where: { id },
+            relations: ['employee', 'employee.user'],
+        });
+    }
+
+    async getTodayAttendance(employeeId: string): Promise<Attendance | null> {
+        const today = new Date().toISOString().split('T')[0];
+        return this.attendanceRepository.findOne({
+            where: {
+                employeeId,
+                date: new Date(today) as any,
+            },
+        });
+    }
+
+    async getAnalytics(filters?: any): Promise<any> {
+        const query = this.attendanceRepository.createQueryBuilder('attendance');
+
+        if (filters?.startDate && filters?.endDate) {
+            query.where('attendance.date BETWEEN :startDate AND :endDate', {
+                startDate: filters.startDate,
+                endDate: filters.endDate,
+            });
+        }
+
+        if (filters?.employeeId) {
+            query.andWhere('attendance.employeeId = :employeeId', { employeeId: filters.employeeId });
+        }
+
+        const total = await query.getCount();
+        const present = await query.clone().andWhere('attendance.status = :status', { status: 'present' }).getCount();
+        const absent = await query.clone().andWhere('attendance.status = :status', { status: 'absent' }).getCount();
+        const late = await query.clone().andWhere('attendance.status = :status', { status: 'late' }).getCount();
+
+        const avgWorkHours = await query
+            .select('AVG(attendance.workHours)', 'avg')
+            .getRawOne();
+
+        // 1. Weekly Attendance Trend (Last 7 Days)
+        const weeklyTrend = await this.attendanceRepository.query(`
+            SELECT 
+                strftime('%w', date) as dayIndex,
+                CASE strftime('%w', date)
+                    WHEN '0' THEN 'Sun'
+                    WHEN '1' THEN 'Mon'
+                    WHEN '2' THEN 'Tue'
+                    WHEN '3' THEN 'Wed'
+                    WHEN '4' THEN 'Thu'
+                    WHEN '5' THEN 'Fri'
+                    WHEN '6' THEN 'Sat'
+                END as day,
+                COUNT(CASE WHEN status = 'present' THEN 1 END) as present,
+                COUNT(CASE WHEN status = 'absent' THEN 1 END) as absent,
+                COUNT(CASE WHEN status = 'late' THEN 1 END) as late
+            FROM attendance
+            WHERE date >= date('now', '-7 days')
+            GROUP BY dayIndex
+            ORDER BY dayIndex
+        `);
+
+        // 2. Attendance Distribution (Today)
+        const today = new Date().toISOString().split('T')[0];
+        const distribution = await this.attendanceRepository.query(`
+            SELECT status as name, COUNT(*) as value
+            FROM attendance
+            WHERE date = ?
+            GROUP BY status
+        `, [today]);
+
+        // 3. 6-Month Punctuality Trend
+        const punctualityTrend = await this.attendanceRepository.query(`
+            SELECT 
+                strftime('%Y-%m', date) as monthKey,
+                CASE strftime('%m', date)
+                    WHEN '01' THEN 'Jan'
+                    WHEN '02' THEN 'Feb'
+                    WHEN '03' THEN 'Mar'
+                    WHEN '04' THEN 'Apr'
+                    WHEN '05' THEN 'May'
+                    WHEN '06' THEN 'Jun'
+                    WHEN '07' THEN 'Jul'
+                    WHEN '08' THEN 'Aug'
+                    WHEN '09' THEN 'Sep'
+                    WHEN '10' THEN 'Oct'
+                    WHEN '11' THEN 'Nov'
+                    WHEN '12' THEN 'Dec'
+                END as month,
+                COUNT(CASE WHEN status = 'present' THEN 1 END) as onTime,
+                COUNT(CASE WHEN status = 'late' THEN 1 END) as late,
+                COUNT(CASE WHEN status = 'early_departure' THEN 1 END) as earlyOut
+            FROM attendance
+            WHERE date >= date('now', '-6 months')
+            GROUP BY monthKey
+            ORDER BY monthKey
+        `);
+
+        return {
+            total,
+            present,
+            absent,
+            late,
+            averageWorkHours: avgWorkHours?.avg || 0,
+            weeklyTrend,
+            distribution,
+            punctualityTrend
+        };
+    }
+}
