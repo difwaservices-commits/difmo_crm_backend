@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -19,11 +20,32 @@ import { Attendance } from './modules/attendance/attendance.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'db.sqlite',
-      entities: [Company, User, Department, Role, Permission, Employee, Attendance],
-      synchronize: true, // Auto-create tables (dev only)
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const dbUrl = configService.get<string>('DATABASE_URL');
+        if (dbUrl) {
+          return {
+            type: 'postgres',
+            url: dbUrl,
+            entities: [Company, User, Department, Role, Permission, Employee, Attendance],
+            synchronize: true, // Note: In production, migrations are preferred over synchronize: true
+            ssl: {
+              rejectUnauthorized: false,
+            },
+          };
+        }
+        return {
+          type: 'sqlite',
+          database: 'db.sqlite',
+          entities: [Company, User, Department, Role, Permission, Employee, Attendance],
+          synchronize: true,
+        };
+      },
+      inject: [ConfigService],
     }),
     AuthModule,
     CompanyModule,

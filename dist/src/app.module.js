@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const config_1 = require("@nestjs/config");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const auth_module_1 = require("./modules/auth/auth.module");
@@ -31,11 +32,32 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forRoot({
-                type: 'sqlite',
-                database: 'db.sqlite',
-                entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance],
-                synchronize: true,
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+            }),
+            typeorm_1.TypeOrmModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: (configService) => {
+                    const dbUrl = configService.get('DATABASE_URL');
+                    if (dbUrl) {
+                        return {
+                            type: 'postgres',
+                            url: dbUrl,
+                            entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance],
+                            synchronize: true,
+                            ssl: {
+                                rejectUnauthorized: false,
+                            },
+                        };
+                    }
+                    return {
+                        type: 'sqlite',
+                        database: 'db.sqlite',
+                        entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance],
+                        synchronize: true,
+                    };
+                },
+                inject: [config_1.ConfigService],
             }),
             auth_module_1.AuthModule,
             company_module_1.CompanyModule,
