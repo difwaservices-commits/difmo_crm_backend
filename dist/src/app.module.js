@@ -26,6 +26,8 @@ const role_entity_1 = require("./modules/access-control/role.entity");
 const permission_entity_1 = require("./modules/access-control/permission.entity");
 const employee_entity_1 = require("./modules/employees/employee.entity");
 const attendance_entity_1 = require("./modules/attendance/attendance.entity");
+const leaves_module_1 = require("./modules/leaves/leaves.module");
+const leave_entity_1 = require("./modules/leaves/leave.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -43,7 +45,7 @@ exports.AppModule = AppModule = __decorate([
                         return {
                             type: 'postgres',
                             url: dbUrl,
-                            entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance],
+                            entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance, leave_entity_1.Leave],
                             synchronize: true,
                             ssl: {
                                 rejectUnauthorized: false,
@@ -53,7 +55,7 @@ exports.AppModule = AppModule = __decorate([
                     return {
                         type: 'sqlite',
                         database: 'db.sqlite',
-                        entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance],
+                        entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance, leave_entity_1.Leave],
                         synchronize: true,
                     };
                 },
@@ -66,6 +68,7 @@ exports.AppModule = AppModule = __decorate([
             access_control_module_1.AccessControlModule,
             employee_module_1.EmployeeModule,
             attendance_module_1.AttendanceModule,
+            leaves_module_1.LeavesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

@@ -17,7 +17,7 @@ const dbUrl = process.env.DATABASE_URL;
 const AppDataSource = new DataSource({
     type: dbUrl ? 'postgres' : 'sqlite',
     database: dbUrl ? undefined : 'db.sqlite',
-    url: dbUrl,
+    url: dbUrl, 
     entities: [User, Company, Role, Permission, Department, Employee, Attendance],
     synchronize: false,
     ssl: dbUrl ? { rejectUnauthorized: false } : undefined,

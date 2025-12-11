@@ -8,6 +8,14 @@ export class CheckInDto {
     @IsOptional()
     location?: string;
 
+    @IsNumber()
+    @IsOptional()
+    latitude?: number;
+
+    @IsNumber()
+    @IsOptional()
+    longitude?: number;
+
     @IsString()
     @IsOptional()
     notes?: string;
@@ -16,6 +24,14 @@ export class CheckInDto {
 export class CheckOutDto {
     @IsString()
     attendanceId: string;
+
+    @IsNumber()
+    @IsOptional()
+    latitude?: number;
+
+    @IsNumber()
+    @IsOptional()
+    longitude?: number;
 
     @IsString()
     @IsOptional()

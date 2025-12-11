@@ -1,18 +1,75 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Attendance } from './attendance.entity';
 import { CheckInDto, CheckOutDto, CreateAttendanceDto } from './dto/attendance.dto';
+import { LeavesService } from '../leaves/leaves.service';
 
 @Injectable()
 export class AttendanceService {
+    // Office coordinates: 26.8604896, 81.0200511
+    private readonly OFFICE_LAT = 26.8604896;
+    private readonly OFFICE_LNG = 81.0200511;
+    private readonly MAX_DISTANCE_METERS = 100;
+
     constructor(
         @InjectRepository(Attendance)
         private attendanceRepository: Repository<Attendance>,
+        private leavesService: LeavesService,
     ) { }
+
+    private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+        const R = 6371e3; // metres
+        const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // in metres
+    }
 
     async checkIn(checkInDto: CheckInDto): Promise<Attendance> {
         const today = new Date().toISOString().split('T')[0];
+
+        // 1. Check for Leave
+        const isOnLeave = await this.leavesService.isEmployeeOnLeave(checkInDto.employeeId, today);
+        if (isOnLeave) {
+            throw new BadRequestException('Cannot check in: Employee is on approved leave today.');
+        }
+
+        // 2. Geofencing Check
+        if (checkInDto.latitude && checkInDto.longitude) {
+            const distance = this.calculateDistance(
+                checkInDto.latitude,
+                checkInDto.longitude,
+                this.OFFICE_LAT,
+                this.OFFICE_LNG
+            );
+            if (distance > this.MAX_DISTANCE_METERS) {
+                throw new ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`);
+            }
+        } else {
+            // Optional: Enforce location requirement? For now, allowing if not provided but ideally should be required.
+            // throw new BadRequestException('Location coordinates are required for check-in.');
+        }
+
+        // 3. Time Constraints (e.g., Office starts at 9:00 AM)
+        // Allowing check-in before 9 AM, but maybe not too early? 
+        // User said "before and after office can not able to check in or checkout"
+        // Let's assume office hours 9:00 AM - 6:00 PM (18:00)
+        const now = new Date();
+        const hour = now.getHours();
+        if (hour < 8) { // Allow check-in from 8 AM onwards (1 hour buffer before 9)
+            throw new ForbiddenException('Cannot check in before 8:00 AM.');
+        }
+        if (hour >= 18) {
+            throw new ForbiddenException('Cannot check in after office hours (6:00 PM).');
+        }
 
         // Check if already checked in today
         const existing = await this.attendanceRepository.findOne({
@@ -26,11 +83,9 @@ export class AttendanceService {
             throw new BadRequestException('Already checked in today');
         }
 
-        const now = new Date();
         const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
-        // Determine status based on company settings (mocked for now, ideally fetch from company)
-        // Default start time 09:00:00
+        // Determine status
         let status = 'present';
         const startHour = 9;
         const startMinute = 0;
@@ -41,7 +96,7 @@ export class AttendanceService {
 
         const attendance = this.attendanceRepository.create({
             employeeId: checkInDto.employeeId,
-            date: today, // Save as string YYYY-MM-DD
+            date: today,
             checkInTime,
             status,
             location: checkInDto.location,
@@ -64,6 +119,19 @@ export class AttendanceService {
             throw new BadRequestException('Already checked out');
         }
 
+        // Geofencing Check for Checkout
+        if (checkOutDto.latitude && checkOutDto.longitude) {
+            const distance = this.calculateDistance(
+                checkOutDto.latitude,
+                checkOutDto.longitude,
+                this.OFFICE_LAT,
+                this.OFFICE_LNG
+            );
+            if (distance > this.MAX_DISTANCE_METERS) {
+                throw new ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check out.`);
+            }
+        }
+
         const now = new Date();
         const checkOutTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
@@ -74,7 +142,7 @@ export class AttendanceService {
             const workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
             attendance.workHours = Math.round(workHours * 100) / 100;
 
-            // Overtime logic (assuming 8 hours standard)
+            // Overtime logic
             if (attendance.workHours > 8) {
                 attendance.overtime = Math.round((attendance.workHours - 8) * 100) / 100;
             }
@@ -83,10 +151,8 @@ export class AttendanceService {
         attendance.checkOutTime = checkOutTime;
 
         // Early departure logic
-        // Default end time 17:00:00 (5 PM)
         const endHour = 17;
         if (now.getHours() < endHour) {
-            // Only change status if it wasn't already 'late' or 'absent'
             if (attendance.status === 'present') {
                 attendance.status = 'early_departure';
             }

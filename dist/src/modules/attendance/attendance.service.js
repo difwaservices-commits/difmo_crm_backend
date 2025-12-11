@@ -17,13 +17,51 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const attendance_entity_1 = require("./attendance.entity");
+const leaves_service_1 = require("../leaves/leaves.service");
 let AttendanceService = class AttendanceService {
     attendanceRepository;
-    constructor(attendanceRepository) {
+    leavesService;
+    OFFICE_LAT = 26.8604896;
+    OFFICE_LNG = 81.0200511;
+    MAX_DISTANCE_METERS = 100;
+    constructor(attendanceRepository, leavesService) {
         this.attendanceRepository = attendanceRepository;
+        this.leavesService = leavesService;
+    }
+    calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3;
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
     async checkIn(checkInDto) {
         const today = new Date().toISOString().split('T')[0];
+        const isOnLeave = await this.leavesService.isEmployeeOnLeave(checkInDto.employeeId, today);
+        if (isOnLeave) {
+            throw new common_1.BadRequestException('Cannot check in: Employee is on approved leave today.');
+        }
+        if (checkInDto.latitude && checkInDto.longitude) {
+            const distance = this.calculateDistance(checkInDto.latitude, checkInDto.longitude, this.OFFICE_LAT, this.OFFICE_LNG);
+            if (distance > this.MAX_DISTANCE_METERS) {
+                throw new common_1.ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`);
+            }
+        }
+        else {
+        }
+        const now = new Date();
+        const hour = now.getHours();
+        if (hour < 8) {
+            throw new common_1.ForbiddenException('Cannot check in before 8:00 AM.');
+        }
+        if (hour >= 18) {
+            throw new common_1.ForbiddenException('Cannot check in after office hours (6:00 PM).');
+        }
         const existing = await this.attendanceRepository.findOne({
             where: {
                 employeeId: checkInDto.employeeId,
@@ -33,7 +71,6 @@ let AttendanceService = class AttendanceService {
         if (existing) {
             throw new common_1.BadRequestException('Already checked in today');
         }
-        const now = new Date();
         const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         let status = 'present';
         const startHour = 9;
@@ -60,6 +97,12 @@ let AttendanceService = class AttendanceService {
         }
         if (attendance.checkOutTime) {
             throw new common_1.BadRequestException('Already checked out');
+        }
+        if (checkOutDto.latitude && checkOutDto.longitude) {
+            const distance = this.calculateDistance(checkOutDto.latitude, checkOutDto.longitude, this.OFFICE_LAT, this.OFFICE_LNG);
+            if (distance > this.MAX_DISTANCE_METERS) {
+                throw new common_1.ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check out.`);
+            }
         }
         const now = new Date();
         const checkOutTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
@@ -256,6 +299,7 @@ exports.AttendanceService = AttendanceService;
 exports.AttendanceService = AttendanceService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(attendance_entity_1.Attendance)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        leaves_service_1.LeavesService])
 ], AttendanceService);
 //# sourceMappingURL=attendance.service.js.map

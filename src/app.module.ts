@@ -17,6 +17,8 @@ import { Role } from './modules/access-control/role.entity';
 import { Permission } from './modules/access-control/permission.entity';
 import { Employee } from './modules/employees/employee.entity';
 import { Attendance } from './modules/attendance/attendance.entity';
+import { LeavesModule } from './modules/leaves/leaves.module';
+import { Leave } from './modules/leaves/leave.entity';
 
 @Module({
   imports: [
@@ -31,7 +33,7 @@ import { Attendance } from './modules/attendance/attendance.entity';
           return {
             type: 'postgres',
             url: dbUrl,
-            entities: [Company, User, Department, Role, Permission, Employee, Attendance],
+            entities: [Company, User, Department, Role, Permission, Employee, Attendance, Leave],
             synchronize: true, // Note: In production, migrations are preferred over synchronize: true
             ssl: {
               rejectUnauthorized: false,
@@ -41,7 +43,7 @@ import { Attendance } from './modules/attendance/attendance.entity';
         return {
           type: 'sqlite',
           database: 'db.sqlite',
-          entities: [Company, User, Department, Role, Permission, Employee, Attendance],
+          entities: [Company, User, Department, Role, Permission, Employee, Attendance, Leave],
           synchronize: true,
         };
       },
@@ -54,6 +56,7 @@ import { Attendance } from './modules/attendance/attendance.entity';
     AccessControlModule,
     EmployeeModule,
     AttendanceModule,
+    LeavesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -14,6 +14,8 @@ const class_validator_1 = require("class-validator");
 class CheckInDto {
     employeeId;
     location;
+    latitude;
+    longitude;
     notes;
 }
 exports.CheckInDto = CheckInDto;
@@ -27,12 +29,24 @@ __decorate([
     __metadata("design:type", String)
 ], CheckInDto.prototype, "location", void 0);
 __decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CheckInDto.prototype, "latitude", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CheckInDto.prototype, "longitude", void 0);
+__decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CheckInDto.prototype, "notes", void 0);
 class CheckOutDto {
     attendanceId;
+    latitude;
+    longitude;
     notes;
 }
 exports.CheckOutDto = CheckOutDto;
@@ -40,6 +54,16 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CheckOutDto.prototype, "attendanceId", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CheckOutDto.prototype, "latitude", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CheckOutDto.prototype, "longitude", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),

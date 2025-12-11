@@ -1,9 +1,15 @@
 import { Repository } from 'typeorm';
 import { Attendance } from './attendance.entity';
 import { CheckInDto, CheckOutDto, CreateAttendanceDto } from './dto/attendance.dto';
+import { LeavesService } from '../leaves/leaves.service';
 export declare class AttendanceService {
     private attendanceRepository;
-    constructor(attendanceRepository: Repository<Attendance>);
+    private leavesService;
+    private readonly OFFICE_LAT;
+    private readonly OFFICE_LNG;
+    private readonly MAX_DISTANCE_METERS;
+    constructor(attendanceRepository: Repository<Attendance>, leavesService: LeavesService);
+    private calculateDistance;
     checkIn(checkInDto: CheckInDto): Promise<Attendance>;
     checkOut(checkOutDto: CheckOutDto): Promise<Attendance>;
     create(createAttendanceDto: CreateAttendanceDto): Promise<Attendance>;

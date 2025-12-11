@@ -1,0 +1,322 @@
+openapi: 3.0.0
+paths:
+  /:
+    get:
+      operationId: AppController_getHello
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags:
+        - App
+  /auth/login:
+    post:
+      operationId: AuthController_login
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: &a1
+        - Auth
+  /auth/register:
+    post:
+      operationId: AuthController_register
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a1
+  /auth/profile:
+    get:
+      operationId: AuthController_getProfile
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+  /company:
+    post:
+      operationId: CompanyController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompanyDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a2
+        - Company
+  /company/{email}:
+    get:
+      operationId: CompanyController_findOne
+      parameters:
+        - name: email
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a2
+  /employees:
+    post:
+      operationId: EmployeeController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a3
+        - Employee
+    get:
+      operationId: EmployeeController_findAll
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+  /employees/stats/count:
+    get:
+      operationId: EmployeeController_getCount
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+  /employees/{id}:
+    get:
+      operationId: EmployeeController_findOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+    put:
+      operationId: EmployeeController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+    delete:
+      operationId: EmployeeController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+  /attendance/check-in:
+    post:
+      operationId: AttendanceController_checkIn
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a4
+        - Attendance
+  /attendance/check-out:
+    post:
+      operationId: AttendanceController_checkOut
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckOutDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a4
+  /attendance:
+    post:
+      operationId: AttendanceController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAttendanceDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a4
+    get:
+      operationId: AttendanceController_findAll
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a4
+  /attendance/today/{employeeId}:
+    get:
+      operationId: AttendanceController_getTodayAttendance
+      parameters:
+        - name: employeeId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a4
+  /attendance/analytics:
+    get:
+      operationId: AttendanceController_getAnalytics
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a4
+  /attendance/{id}:
+    get:
+      operationId: AttendanceController_findOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a4
+  /leaves:
+    post:
+      operationId: LeavesController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeaveDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a5
+        - Leaves
+    get:
+      operationId: LeavesController_findAll
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+  /leaves/{id}:
+    get:
+      operationId: LeavesController_findOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+  /leaves/{id}/status:
+    patch:
+      operationId: LeavesController_updateStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLeaveStatusDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+info:
+  title: Difmo CRM API
+  description: The Difmo CRM API description
+  version: "1.0"
+  contact: {}
+tags: []
+servers:
+  - url: http://localhost:3000
+    description: Development
+  - url: https://api.difmocrm.com
+    description: Production
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    CreateCompanyDto:
+      type: object
+      properties: {}
+    CreateEmployeeDto:
+      type: object
+      properties: {}
+    UpdateEmployeeDto:
+      type: object
+      properties: {}
+    CheckInDto:
+      type: object
+      properties: {}
+    CheckOutDto:
+      type: object
+      properties: {}
+    CreateAttendanceDto:
+      type: object
+      properties: {}
+    CreateLeaveDto:
+      type: object
+      properties: {}
+    UpdateLeaveStatusDto:
+      type: object
+      properties: {}

@@ -1,10 +1,14 @@
 export declare class CheckInDto {
     employeeId: string;
     location?: string;
+    latitude?: number;
+    longitude?: number;
     notes?: string;
 }
 export declare class CheckOutDto {
     attendanceId: string;
+    latitude?: number;
+    longitude?: number;
     notes?: string;
 }
 export declare class CreateAttendanceDto {
