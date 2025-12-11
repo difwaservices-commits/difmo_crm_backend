@@ -42,11 +42,15 @@ const permission_entity_1 = require("./src/modules/access-control/permission.ent
 const department_entity_1 = require("./src/modules/departments/department.entity");
 const employee_entity_1 = require("./src/modules/employees/employee.entity");
 const attendance_entity_1 = require("./src/modules/attendance/attendance.entity");
+require('dotenv').config();
+const dbUrl = process.env.DATABASE_URL;
 const AppDataSource = new typeorm_1.DataSource({
-    type: 'sqlite',
-    database: 'db.sqlite',
+    type: dbUrl ? 'postgres' : 'sqlite',
+    database: dbUrl ? undefined : 'db.sqlite',
+    url: dbUrl,
     entities: [user_entity_1.User, company_entity_1.Company, role_entity_1.Role, permission_entity_1.Permission, department_entity_1.Department, employee_entity_1.Employee, attendance_entity_1.Attendance],
     synchronize: false,
+    ssl: dbUrl ? { rejectUnauthorized: false } : undefined,
 });
 async function seedAdmin() {
     try {

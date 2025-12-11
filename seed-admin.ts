@@ -10,12 +10,17 @@ import { Department } from './src/modules/departments/department.entity';
 import { Employee } from './src/modules/employees/employee.entity';
 import { Attendance } from './src/modules/attendance/attendance.entity';
 
-// Database configuration matching app module
+require('dotenv').config();
+
+const dbUrl = process.env.DATABASE_URL;
+
 const AppDataSource = new DataSource({
-    type: 'sqlite',
-    database: 'db.sqlite',
+    type: dbUrl ? 'postgres' : 'sqlite',
+    database: dbUrl ? undefined : 'db.sqlite',
+    url: dbUrl,
     entities: [User, Company, Role, Permission, Department, Employee, Attendance],
-    synchronize: false, // Assuming schema is already synced by the app
+    synchronize: false,
+    ssl: dbUrl ? { rejectUnauthorized: false } : undefined,
 });
 
 async function seedAdmin() {

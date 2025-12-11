@@ -150,58 +150,96 @@ let AttendanceService = class AttendanceService {
         const avgWorkHours = await query
             .select('AVG(attendance.workHours)', 'avg')
             .getRawOne();
-        const weeklyTrend = await this.attendanceRepository.query(`
-            SELECT 
-                strftime('%w', date) as dayIndex,
-                CASE strftime('%w', date)
-                    WHEN '0' THEN 'Sun'
-                    WHEN '1' THEN 'Mon'
-                    WHEN '2' THEN 'Tue'
-                    WHEN '3' THEN 'Wed'
-                    WHEN '4' THEN 'Thu'
-                    WHEN '5' THEN 'Fri'
-                    WHEN '6' THEN 'Sat'
-                END as day,
-                COUNT(CASE WHEN status = 'present' THEN 1 END) as present,
-                COUNT(CASE WHEN status = 'absent' THEN 1 END) as absent,
-                COUNT(CASE WHEN status = 'late' THEN 1 END) as late
-            FROM attendance
-            WHERE date >= date('now', '-7 days')
-            GROUP BY dayIndex
-            ORDER BY dayIndex
-        `);
+        const isPostgres = this.attendanceRepository.manager.connection.options.type === 'postgres';
+        let weeklyTrendSql = '';
+        if (isPostgres) {
+            weeklyTrendSql = `
+                SELECT 
+                    EXTRACT(DOW FROM date) as "dayIndex",
+                    TO_CHAR(date, 'Dy') as day,
+                    COUNT(CASE WHEN status = 'present' THEN 1 END) as present,
+                    COUNT(CASE WHEN status = 'absent' THEN 1 END) as absent,
+                    COUNT(CASE WHEN status = 'late' THEN 1 END) as late
+                FROM attendance
+                WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+                GROUP BY "dayIndex", day
+                ORDER BY "dayIndex"
+            `;
+        }
+        else {
+            weeklyTrendSql = `
+                SELECT 
+                    strftime('%w', date) as dayIndex,
+                    CASE strftime('%w', date)
+                        WHEN '0' THEN 'Sun'
+                        WHEN '1' THEN 'Mon'
+                        WHEN '2' THEN 'Tue'
+                        WHEN '3' THEN 'Wed'
+                        WHEN '4' THEN 'Thu'
+                        WHEN '5' THEN 'Fri'
+                        WHEN '6' THEN 'Sat'
+                    END as day,
+                    COUNT(CASE WHEN status = 'present' THEN 1 END) as present,
+                    COUNT(CASE WHEN status = 'absent' THEN 1 END) as absent,
+                    COUNT(CASE WHEN status = 'late' THEN 1 END) as late
+                FROM attendance
+                WHERE date >= date('now', '-7 days')
+                GROUP BY dayIndex
+                ORDER BY dayIndex
+            `;
+        }
+        const weeklyTrend = await this.attendanceRepository.query(weeklyTrendSql);
         const today = new Date().toISOString().split('T')[0];
-        const distribution = await this.attendanceRepository.query(`
+        const distributionSql = `
             SELECT status as name, COUNT(*) as value
             FROM attendance
-            WHERE date = ?
+            WHERE date = $1
             GROUP BY status
-        `, [today]);
-        const punctualityTrend = await this.attendanceRepository.query(`
-            SELECT 
-                strftime('%Y-%m', date) as monthKey,
-                CASE strftime('%m', date)
-                    WHEN '01' THEN 'Jan'
-                    WHEN '02' THEN 'Feb'
-                    WHEN '03' THEN 'Mar'
-                    WHEN '04' THEN 'Apr'
-                    WHEN '05' THEN 'May'
-                    WHEN '06' THEN 'Jun'
-                    WHEN '07' THEN 'Jul'
-                    WHEN '08' THEN 'Aug'
-                    WHEN '09' THEN 'Sep'
-                    WHEN '10' THEN 'Oct'
-                    WHEN '11' THEN 'Nov'
-                    WHEN '12' THEN 'Dec'
-                END as month,
-                COUNT(CASE WHEN status = 'present' THEN 1 END) as onTime,
-                COUNT(CASE WHEN status = 'late' THEN 1 END) as late,
-                COUNT(CASE WHEN status = 'early_departure' THEN 1 END) as earlyOut
-            FROM attendance
-            WHERE date >= date('now', '-6 months')
-            GROUP BY monthKey
-            ORDER BY monthKey
-        `);
+        `.replace('$1', isPostgres ? '$1' : '?');
+        const distribution = await this.attendanceRepository.query(distributionSql, [today]);
+        let punctualityTrendSql = '';
+        if (isPostgres) {
+            punctualityTrendSql = `
+                SELECT 
+                    TO_CHAR(date, 'YYYY-MM') as "monthKey",
+                    TO_CHAR(date, 'Mon') as month,
+                    COUNT(CASE WHEN status = 'present' THEN 1 END) as "onTime",
+                    COUNT(CASE WHEN status = 'late' THEN 1 END) as late,
+                    COUNT(CASE WHEN status = 'early_departure' THEN 1 END) as "earlyOut"
+                FROM attendance
+                WHERE date >= CURRENT_DATE - INTERVAL '6 months'
+                GROUP BY "monthKey", month
+                ORDER BY "monthKey"
+            `;
+        }
+        else {
+            punctualityTrendSql = `
+                SELECT 
+                    strftime('%Y-%m', date) as monthKey,
+                    CASE strftime('%m', date)
+                        WHEN '01' THEN 'Jan'
+                        WHEN '02' THEN 'Feb'
+                        WHEN '03' THEN 'Mar'
+                        WHEN '04' THEN 'Apr'
+                        WHEN '05' THEN 'May'
+                        WHEN '06' THEN 'Jun'
+                        WHEN '07' THEN 'Jul'
+                        WHEN '08' THEN 'Aug'
+                        WHEN '09' THEN 'Sep'
+                        WHEN '10' THEN 'Oct'
+                        WHEN '11' THEN 'Nov'
+                        WHEN '12' THEN 'Dec'
+                    END as month,
+                    COUNT(CASE WHEN status = 'present' THEN 1 END) as onTime,
+                    COUNT(CASE WHEN status = 'late' THEN 1 END) as late,
+                    COUNT(CASE WHEN status = 'early_departure' THEN 1 END) as earlyOut
+                FROM attendance
+                WHERE date >= date('now', '-6 months')
+                GROUP BY monthKey
+                ORDER BY monthKey
+            `;
+        }
+        const punctualityTrend = await this.attendanceRepository.query(punctualityTrendSql);
         return {
             total,
             present,
