@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateAttendanceDto = exports.CheckOutDto = exports.CheckInDto = void 0;
+exports.BulkCheckInDto = exports.CreateAttendanceDto = exports.CheckOutDto = exports.CheckInDto = void 0;
 const class_validator_1 = require("class-validator");
 class CheckInDto {
     employeeId;
@@ -118,4 +118,19 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateAttendanceDto.prototype, "location", void 0);
+class BulkCheckInDto {
+    employeeIds;
+    notes;
+}
+exports.BulkCheckInDto = BulkCheckInDto;
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], BulkCheckInDto.prototype, "employeeIds", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], BulkCheckInDto.prototype, "notes", void 0);
 //# sourceMappingURL=attendance.dto.js.map

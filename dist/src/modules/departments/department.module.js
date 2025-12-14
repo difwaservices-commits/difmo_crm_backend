@@ -10,14 +10,17 @@ exports.DepartmentModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const department_entity_1 = require("./department.entity");
+const department_service_1 = require("./department.service");
+const department_controller_1 = require("./department.controller");
 let DepartmentModule = class DepartmentModule {
 };
 exports.DepartmentModule = DepartmentModule;
 exports.DepartmentModule = DepartmentModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([department_entity_1.Department])],
-        providers: [],
-        exports: [],
+        controllers: [department_controller_1.DepartmentController],
+        providers: [department_service_1.DepartmentService],
+        exports: [department_service_1.DepartmentService],
     })
 ], DepartmentModule);
 //# sourceMappingURL=department.module.js.map

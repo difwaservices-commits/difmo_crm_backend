@@ -79,6 +79,14 @@ export class CreateEmployeeDto {
 export class UpdateEmployeeDto {
     @IsString()
     @IsOptional()
+    firstName?: string;
+
+    @IsString()
+    @IsOptional()
+    lastName?: string;
+
+    @IsString()
+    @IsOptional()
     departmentId?: string;
 
     @IsString()

@@ -81,6 +81,14 @@ let UserService = class UserService {
             relations: ['company', 'roles', 'roles.permissions']
         });
     }
+    async update(id, updateUserDto) {
+        await this.userRepository.update(id, updateUserDto);
+        const user = await this.findById(id);
+        if (!user) {
+            throw new Error(`User with ID ${id} not found`);
+        }
+        return user;
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([

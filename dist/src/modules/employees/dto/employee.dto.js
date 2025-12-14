@@ -127,6 +127,8 @@ __decorate([
     __metadata("design:type", Array)
 ], CreateEmployeeDto.prototype, "skills", void 0);
 class UpdateEmployeeDto {
+    firstName;
+    lastName;
     departmentId;
     role;
     hireDate;
@@ -141,6 +143,16 @@ class UpdateEmployeeDto {
     skills;
 }
 exports.UpdateEmployeeDto = UpdateEmployeeDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateEmployeeDto.prototype, "firstName", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateEmployeeDto.prototype, "lastName", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),

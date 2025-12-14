@@ -18,15 +18,18 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const attendance_entity_1 = require("./attendance.entity");
 const leaves_service_1 = require("../leaves/leaves.service");
+const employee_service_1 = require("../employees/employee.service");
 let AttendanceService = class AttendanceService {
     attendanceRepository;
     leavesService;
+    employeeService;
     OFFICE_LAT = 26.8604896;
     OFFICE_LNG = 81.0200511;
     MAX_DISTANCE_METERS = 100;
-    constructor(attendanceRepository, leavesService) {
+    constructor(attendanceRepository, leavesService, employeeService) {
         this.attendanceRepository = attendanceRepository;
         this.leavesService = leavesService;
+        this.employeeService = employeeService;
     }
     calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
@@ -52,15 +55,17 @@ let AttendanceService = class AttendanceService {
                 throw new common_1.ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`);
             }
         }
-        else {
-        }
-        const now = new Date();
-        const hour = now.getHours();
-        if (hour < 8) {
-            throw new common_1.ForbiddenException('Cannot check in before 8:00 AM.');
-        }
-        if (hour >= 18) {
-            throw new common_1.ForbiddenException('Cannot check in after office hours (6:00 PM).');
+        const employee = await this.employeeService.findOne(checkInDto.employeeId);
+        if (employee && employee.company && employee.company.openingTime) {
+            const now = new Date();
+            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
+            const openTime = new Date(now);
+            openTime.setHours(openHour, openMinute, 0, 0);
+            const earliestCheckIn = new Date(openTime);
+            earliestCheckIn.setHours(openHour - 1);
+            if (now < earliestCheckIn) {
+                throw new common_1.ForbiddenException(`Cannot check in before ${earliestCheckIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`);
+            }
         }
         const existing = await this.attendanceRepository.findOne({
             where: {
@@ -71,12 +76,21 @@ let AttendanceService = class AttendanceService {
         if (existing) {
             throw new common_1.BadRequestException('Already checked in today');
         }
+        const now = new Date();
         const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         let status = 'present';
-        const startHour = 9;
-        const startMinute = 0;
-        if (now.getHours() > startHour || (now.getHours() === startHour && now.getMinutes() > startMinute + 15)) {
-            status = 'late';
+        if (employee && employee.company && employee.company.openingTime) {
+            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
+            if (now.getHours() > openHour || (now.getHours() === openHour && now.getMinutes() > openMinute + 15)) {
+                status = 'late';
+            }
+        }
+        else {
+            const startHour = 9;
+            const startMinute = 0;
+            if (now.getHours() > startHour || (now.getHours() === startHour && now.getMinutes() > startMinute + 15)) {
+                status = 'late';
+            }
         }
         const attendance = this.attendanceRepository.create({
             employeeId: checkInDto.employeeId,
@@ -87,6 +101,22 @@ let AttendanceService = class AttendanceService {
             notes: checkInDto.notes,
         });
         return this.attendanceRepository.save(attendance);
+    }
+    async bulkCheckIn(employeeIds, notes) {
+        const results = {
+            success: [],
+            failed: []
+        };
+        for (const employeeId of employeeIds) {
+            try {
+                await this.checkIn({ employeeId, notes, location: 'Bulk Check-in' });
+                results.success.push(employeeId);
+            }
+            catch (error) {
+                results.failed.push({ employeeId, error: error.message });
+            }
+        }
+        return results;
     }
     async checkOut(checkOutDto) {
         const attendance = await this.attendanceRepository.findOne({
@@ -300,6 +330,7 @@ exports.AttendanceService = AttendanceService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(attendance_entity_1.Attendance)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        leaves_service_1.LeavesService])
+        leaves_service_1.LeavesService,
+        employee_service_1.EmployeeService])
 ], AttendanceService);
 //# sourceMappingURL=attendance.service.js.map

@@ -32,6 +32,10 @@ let CompanyService = class CompanyService {
     async findById(id) {
         return this.companyRepository.findOne({ where: { id }, relations: ['users', 'departments'] });
     }
+    async update(id, updateData) {
+        await this.companyRepository.update(id, updateData);
+        return this.findById(id);
+    }
 };
 exports.CompanyService = CompanyService;
 exports.CompanyService = CompanyService = __decorate([

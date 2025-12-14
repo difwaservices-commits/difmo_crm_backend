@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsNumber, IsArray } from 'class-validator';
 
 export class CheckInDto {
     @IsString()
@@ -68,4 +68,14 @@ export class CreateAttendanceDto {
     @IsString()
     @IsOptional()
     location?: string;
+}
+
+export class BulkCheckInDto {
+    @IsArray()
+    @IsString({ each: true })
+    employeeIds: string[];
+
+    @IsString()
+    @IsOptional()
+    notes?: string;
 }

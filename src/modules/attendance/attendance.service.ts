@@ -4,6 +4,7 @@ import { Repository, Between } from 'typeorm';
 import { Attendance } from './attendance.entity';
 import { CheckInDto, CheckOutDto, CreateAttendanceDto } from './dto/attendance.dto';
 import { LeavesService } from '../leaves/leaves.service';
+import { EmployeeService } from '../employees/employee.service';
 
 @Injectable()
 export class AttendanceService {
@@ -16,6 +17,7 @@ export class AttendanceService {
         @InjectRepository(Attendance)
         private attendanceRepository: Repository<Attendance>,
         private leavesService: LeavesService,
+        private employeeService: EmployeeService,
     ) { }
 
     private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -53,22 +55,23 @@ export class AttendanceService {
             if (distance > this.MAX_DISTANCE_METERS) {
                 throw new ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`);
             }
-        } else {
-            // Optional: Enforce location requirement? For now, allowing if not provided but ideally should be required.
-            // throw new BadRequestException('Location coordinates are required for check-in.');
         }
 
-        // 3. Time Constraints (e.g., Office starts at 9:00 AM)
-        // Allowing check-in before 9 AM, but maybe not too early? 
-        // User said "before and after office can not able to check in or checkout"
-        // Let's assume office hours 9:00 AM - 6:00 PM (18:00)
-        const now = new Date();
-        const hour = now.getHours();
-        if (hour < 8) { // Allow check-in from 8 AM onwards (1 hour buffer before 9)
-            throw new ForbiddenException('Cannot check in before 8:00 AM.');
-        }
-        if (hour >= 18) {
-            throw new ForbiddenException('Cannot check in after office hours (6:00 PM).');
+        // 3. Time Constraints based on Company Settings
+        const employee = await this.employeeService.findOne(checkInDto.employeeId);
+        if (employee && employee.company && employee.company.openingTime) {
+            const now = new Date();
+            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
+            const openTime = new Date(now);
+            openTime.setHours(openHour, openMinute, 0, 0);
+
+            // Allow check-in 1 hour before opening time
+            const earliestCheckIn = new Date(openTime);
+            earliestCheckIn.setHours(openHour - 1);
+
+            if (now < earliestCheckIn) {
+                throw new ForbiddenException(`Cannot check in before ${earliestCheckIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`);
+            }
         }
 
         // Check if already checked in today
@@ -83,15 +86,24 @@ export class AttendanceService {
             throw new BadRequestException('Already checked in today');
         }
 
+        const now = new Date();
         const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
         // Determine status
         let status = 'present';
-        const startHour = 9;
-        const startMinute = 0;
-
-        if (now.getHours() > startHour || (now.getHours() === startHour && now.getMinutes() > startMinute + 15)) {
-            status = 'late';
+        if (employee && employee.company && employee.company.openingTime) {
+            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
+            // Late if more than 15 mins after opening time
+            if (now.getHours() > openHour || (now.getHours() === openHour && now.getMinutes() > openMinute + 15)) {
+                status = 'late';
+            }
+        } else {
+            // Default logic if no company time set
+            const startHour = 9;
+            const startMinute = 0;
+            if (now.getHours() > startHour || (now.getHours() === startHour && now.getMinutes() > startMinute + 15)) {
+                status = 'late';
+            }
         }
 
         const attendance = this.attendanceRepository.create({
@@ -104,6 +116,24 @@ export class AttendanceService {
         });
 
         return this.attendanceRepository.save(attendance);
+    }
+
+    async bulkCheckIn(employeeIds: string[], notes?: string): Promise<any> {
+        const results: { success: string[], failed: { employeeId: string, error: any }[] } = {
+            success: [],
+            failed: []
+        };
+
+        for (const employeeId of employeeIds) {
+            try {
+                await this.checkIn({ employeeId, notes, location: 'Bulk Check-in' });
+                results.success.push(employeeId);
+            } catch (error) {
+                results.failed.push({ employeeId, error: error.message });
+            }
+        }
+
+        return results;
     }
 
     async checkOut(checkOutDto: CheckOutDto): Promise<Attendance> {

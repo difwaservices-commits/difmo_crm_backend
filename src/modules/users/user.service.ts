@@ -41,4 +41,12 @@ export class UserService {
             relations: ['company', 'roles', 'roles.permissions']
         });
     }
+    async update(id: string, updateUserDto: Partial<User>): Promise<User> {
+        await this.userRepository.update(id, updateUserDto);
+        const user = await this.findById(id);
+        if (!user) {
+            throw new Error(`User with ID ${id} not found`);
+        }
+        return user;
+    }
 }

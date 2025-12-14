@@ -16,8 +16,11 @@ const user_entity_1 = require("../users/user.entity");
 let Department = class Department {
     id;
     name;
+    companyId;
     company;
     users;
+    manager;
+    managerId;
     createdAt;
     updatedAt;
 };
@@ -31,13 +34,27 @@ __decorate([
     __metadata("design:type", String)
 ], Department.prototype, "name", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Department.prototype, "companyId", void 0);
+__decorate([
     (0, typeorm_1.ManyToOne)(() => company_entity_1.Company, (company) => company.departments),
+    (0, typeorm_1.JoinColumn)({ name: 'companyId' }),
     __metadata("design:type", company_entity_1.Company)
 ], Department.prototype, "company", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => user_entity_1.User, (user) => user.department),
     __metadata("design:type", Array)
 ], Department.prototype, "users", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { nullable: true }),
+    (0, typeorm_1.JoinColumn)({ name: 'managerId' }),
+    __metadata("design:type", user_entity_1.User)
+], Department.prototype, "manager", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Department.prototype, "managerId", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

@@ -70,6 +70,10 @@ let EmployeeService = class EmployeeService {
             console.log('[EmployeeService] Filtering by companyId:', filters.companyId);
             query.andWhere('employee.companyId = :companyId', { companyId: filters.companyId });
         }
+        if (filters?.userId) {
+            console.log('[EmployeeService] Filtering by userId:', filters.userId);
+            query.andWhere('employee.userId = :userId', { userId: filters.userId });
+        }
         if (filters?.department) {
             console.log('[EmployeeService] Filtering by department:', filters.department);
             query.andWhere('employee.departmentId = :departmentId', { departmentId: filters.department });
@@ -109,8 +113,33 @@ let EmployeeService = class EmployeeService {
         });
     }
     async update(id, updateEmployeeDto) {
-        await this.employeeRepository.update(id, updateEmployeeDto);
-        return this.findOne(id);
+        console.log('[EmployeeService] Updating employee:', id, updateEmployeeDto);
+        try {
+            const employee = await this.findOne(id);
+            if (!employee) {
+                console.log('[EmployeeService] Employee not found:', id);
+                return null;
+            }
+            if (updateEmployeeDto.firstName || updateEmployeeDto.lastName) {
+                const userUpdate = {};
+                if (updateEmployeeDto.firstName)
+                    userUpdate.firstName = updateEmployeeDto.firstName;
+                if (updateEmployeeDto.lastName)
+                    userUpdate.lastName = updateEmployeeDto.lastName;
+                if (employee.userId) {
+                    console.log('[EmployeeService] Updating user:', employee.userId, userUpdate);
+                    await this.userService.update(employee.userId, userUpdate);
+                }
+            }
+            const { firstName, lastName, ...employeeUpdate } = updateEmployeeDto;
+            console.log('[EmployeeService] Updating employee record:', employeeUpdate);
+            await this.employeeRepository.update(id, employeeUpdate);
+            return this.findOne(id);
+        }
+        catch (error) {
+            console.error('[EmployeeService] Update failed:', error);
+            throw error;
+        }
     }
     async remove(id) {
         await this.employeeRepository.delete(id);

@@ -21,6 +21,8 @@ export declare class Company {
     enableTimeTracking: boolean;
     enableScreenMonitoring: boolean;
     enablePayroll: boolean;
+    openingTime: string;
+    closingTime: string;
     users: User[];
     departments: Department[];
     createdAt: Date;

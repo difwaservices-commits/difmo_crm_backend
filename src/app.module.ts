@@ -29,6 +29,7 @@ import { Leave } from './modules/leaves/leave.entity';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const dbUrl = configService.get<string>('DATABASE_URL');
+        console.log('DATABASE_URL:', dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set');
         if (dbUrl) {
           return {
             type: 'postgres',
@@ -40,6 +41,7 @@ import { Leave } from './modules/leaves/leave.entity';
             },
           };
         }
+        console.log('Using SQLite Database');
         return {
           type: 'sqlite',
           database: 'db.sqlite',

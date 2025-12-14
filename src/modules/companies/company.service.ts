@@ -23,4 +23,9 @@ export class CompanyService {
     async findById(id: string): Promise<Company | null> {
         return this.companyRepository.findOne({ where: { id }, relations: ['users', 'departments'] });
     }
+
+    async update(id: string, updateData: Partial<Company>): Promise<Company> {
+        await this.companyRepository.update(id, updateData);
+        return this.findById(id) as Promise<Company>;
+    }
 }

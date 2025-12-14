@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
-import { CheckInDto, CheckOutDto, CreateAttendanceDto } from './dto/attendance.dto';
+import { CheckInDto, CheckOutDto, CreateAttendanceDto, BulkCheckInDto } from './dto/attendance.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('attendance')
@@ -15,6 +15,16 @@ export class AttendanceController {
             data: attendance,
             statusCode: 201,
             message: 'Checked in successfully'
+        };
+    }
+
+    @Post('bulk-check-in')
+    async bulkCheckIn(@Body() bulkCheckInDto: BulkCheckInDto) {
+        const results = await this.attendanceService.bulkCheckIn(bulkCheckInDto.employeeIds, bulkCheckInDto.notes);
+        return {
+            data: results,
+            statusCode: 200,
+            message: 'Bulk check-in processed'
         };
     }
 

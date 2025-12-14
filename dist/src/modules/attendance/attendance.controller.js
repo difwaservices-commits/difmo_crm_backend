@@ -30,6 +30,14 @@ let AttendanceController = class AttendanceController {
             message: 'Checked in successfully'
         };
     }
+    async bulkCheckIn(bulkCheckInDto) {
+        const results = await this.attendanceService.bulkCheckIn(bulkCheckInDto.employeeIds, bulkCheckInDto.notes);
+        return {
+            data: results,
+            statusCode: 200,
+            message: 'Bulk check-in processed'
+        };
+    }
     async checkOut(checkOutDto) {
         const attendance = await this.attendanceService.checkOut(checkOutDto);
         return {
@@ -87,6 +95,13 @@ __decorate([
     __metadata("design:paramtypes", [attendance_dto_1.CheckInDto]),
     __metadata("design:returntype", Promise)
 ], AttendanceController.prototype, "checkIn", null);
+__decorate([
+    (0, common_1.Post)('bulk-check-in'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [attendance_dto_1.BulkCheckInDto]),
+    __metadata("design:returntype", Promise)
+], AttendanceController.prototype, "bulkCheckIn", null);
 __decorate([
     (0, common_1.Post)('check-out'),
     __param(0, (0, common_1.Body)()),

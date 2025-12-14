@@ -1,10 +1,15 @@
 import { AttendanceService } from './attendance.service';
-import { CheckInDto, CheckOutDto, CreateAttendanceDto } from './dto/attendance.dto';
+import { CheckInDto, CheckOutDto, CreateAttendanceDto, BulkCheckInDto } from './dto/attendance.dto';
 export declare class AttendanceController {
     private readonly attendanceService;
     constructor(attendanceService: AttendanceService);
     checkIn(checkInDto: CheckInDto): Promise<{
         data: import("./attendance.entity").Attendance;
+        statusCode: number;
+        message: string;
+    }>;
+    bulkCheckIn(bulkCheckInDto: BulkCheckInDto): Promise<{
+        data: any;
         statusCode: number;
         message: string;
     }>;

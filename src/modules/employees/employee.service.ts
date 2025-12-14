@@ -72,6 +72,11 @@ export class EmployeeService {
             query.andWhere('employee.companyId = :companyId', { companyId: filters.companyId });
         }
 
+        if (filters?.userId) {
+            console.log('[EmployeeService] Filtering by userId:', filters.userId);
+            query.andWhere('employee.userId = :userId', { userId: filters.userId });
+        }
+
         if (filters?.department) {
             console.log('[EmployeeService] Filtering by department:', filters.department);
             query.andWhere('employee.departmentId = :departmentId', { departmentId: filters.department });
@@ -124,8 +129,36 @@ export class EmployeeService {
     }
 
     async update(id: string, updateEmployeeDto: UpdateEmployeeDto): Promise<Employee | null> {
-        await this.employeeRepository.update(id, updateEmployeeDto);
-        return this.findOne(id);
+        console.log('[EmployeeService] Updating employee:', id, updateEmployeeDto);
+        try {
+            const employee = await this.findOne(id);
+            if (!employee) {
+                console.log('[EmployeeService] Employee not found:', id);
+                return null;
+            }
+
+            // Update User details if provided
+            if (updateEmployeeDto.firstName || updateEmployeeDto.lastName) {
+                const userUpdate: any = {};
+                if (updateEmployeeDto.firstName) userUpdate.firstName = updateEmployeeDto.firstName;
+                if (updateEmployeeDto.lastName) userUpdate.lastName = updateEmployeeDto.lastName;
+
+                if (employee.userId) {
+                    console.log('[EmployeeService] Updating user:', employee.userId, userUpdate);
+                    await this.userService.update(employee.userId, userUpdate);
+                }
+            }
+
+            // Remove user fields from DTO before updating employee to avoid errors
+            const { firstName, lastName, ...employeeUpdate } = updateEmployeeDto;
+
+            console.log('[EmployeeService] Updating employee record:', employeeUpdate);
+            await this.employeeRepository.update(id, employeeUpdate);
+            return this.findOne(id);
+        } catch (error) {
+            console.error('[EmployeeService] Update failed:', error);
+            throw error;
+        }
     }
 
     async remove(id: string): Promise<void> {

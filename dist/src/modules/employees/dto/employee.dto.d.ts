@@ -20,6 +20,8 @@ export declare class CreateEmployeeDto {
     skills?: string[];
 }
 export declare class UpdateEmployeeDto {
+    firstName?: string;
+    lastName?: string;
     departmentId?: string;
     role?: string;
     hireDate?: string;

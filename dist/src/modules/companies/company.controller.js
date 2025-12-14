@@ -16,6 +16,7 @@ exports.CompanyController = void 0;
 const common_1 = require("@nestjs/common");
 const company_service_1 = require("./company.service");
 const create_company_dto_1 = require("./dto/create-company.dto");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let CompanyController = class CompanyController {
     companyService;
     constructor(companyService) {
@@ -24,8 +25,15 @@ let CompanyController = class CompanyController {
     create(createCompanyDto) {
         return this.companyService.create(createCompanyDto);
     }
+    findById(id) {
+        console.log('Fetching company by ID:', id);
+        return this.companyService.findById(id);
+    }
     findOne(email) {
         return this.companyService.findByEmail(email);
+    }
+    update(id, updateData) {
+        return this.companyService.update(id, updateData);
     }
 };
 exports.CompanyController = CompanyController;
@@ -37,12 +45,28 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CompanyController.prototype, "create", null);
 __decorate([
+    (0, common_1.Get)('id/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CompanyController.prototype, "findById", null);
+__decorate([
     (0, common_1.Get)(':email'),
     __param(0, (0, common_1.Param)('email')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], CompanyController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], CompanyController.prototype, "update", null);
 exports.CompanyController = CompanyController = __decorate([
     (0, common_1.Controller)('company'),
     __metadata("design:paramtypes", [company_service_1.CompanyService])

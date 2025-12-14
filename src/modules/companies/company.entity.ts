@@ -64,6 +64,12 @@ export class Company {
   @Column({ default: false })
   enablePayroll: boolean;
 
+  @Column({ nullable: true })
+  openingTime: string; // HH:mm format
+
+  @Column({ nullable: true })
+  closingTime: string; // HH:mm format
+
   @OneToMany(() => User, (user) => user.company)
   users: User[];
 

@@ -34,6 +34,8 @@ let Company = class Company {
     enableTimeTracking;
     enableScreenMonitoring;
     enablePayroll;
+    openingTime;
+    closingTime;
     users;
     departments;
     createdAt;
@@ -120,6 +122,14 @@ __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], Company.prototype, "enablePayroll", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Company.prototype, "openingTime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Company.prototype, "closingTime", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => user_entity_1.User, (user) => user.company),
     __metadata("design:type", Array)

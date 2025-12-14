@@ -21,3 +21,7 @@ export declare class CreateAttendanceDto {
     notes?: string;
     location?: string;
 }
+export declare class BulkCheckInDto {
+    employeeIds: string[];
+    notes?: string;
+}

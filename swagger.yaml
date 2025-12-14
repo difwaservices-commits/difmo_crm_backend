@@ -49,6 +49,19 @@ paths:
           description: ""
       tags: &a2
         - Company
+  /company/id/{id}:
+    get:
+      operationId: CompanyController_findById
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a2
   /company/{email}:
     get:
       operationId: CompanyController_findOne
@@ -62,6 +75,89 @@ paths:
         "200":
           description: ""
       tags: *a2
+  /company/{id}:
+    patch:
+      operationId: CompanyController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a2
+  /departments:
+    post:
+      operationId: DepartmentController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepartmentDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a3
+        - Department
+    get:
+      operationId: DepartmentController_findAll
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+  /departments/{id}:
+    get:
+      operationId: DepartmentController_findOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+    patch:
+      operationId: DepartmentController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDepartmentDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+    delete:
+      operationId: DepartmentController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
   /employees:
     post:
       operationId: EmployeeController_create
@@ -75,7 +171,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a3
+      tags: &a4
         - Employee
     get:
       operationId: EmployeeController_findAll
@@ -83,7 +179,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a4
   /employees/stats/count:
     get:
       operationId: EmployeeController_getCount
@@ -96,7 +192,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a4
   /employees/{id}:
     get:
       operationId: EmployeeController_findOne
@@ -109,7 +205,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a4
     put:
       operationId: EmployeeController_update
       parameters:
@@ -127,7 +223,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a4
     delete:
       operationId: EmployeeController_remove
       parameters:
@@ -139,7 +235,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a4
   /attendance/check-in:
     post:
       operationId: AttendanceController_checkIn
@@ -153,8 +249,22 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a4
+      tags: &a5
         - Attendance
+  /attendance/bulk-check-in:
+    post:
+      operationId: AttendanceController_bulkCheckIn
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkCheckInDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a5
   /attendance/check-out:
     post:
       operationId: AttendanceController_checkOut
@@ -168,7 +278,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a4
+      tags: *a5
   /attendance:
     post:
       operationId: AttendanceController_create
@@ -182,14 +292,14 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a4
+      tags: *a5
     get:
       operationId: AttendanceController_findAll
       parameters: []
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
   /attendance/today/{employeeId}:
     get:
       operationId: AttendanceController_getTodayAttendance
@@ -202,7 +312,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
   /attendance/analytics:
     get:
       operationId: AttendanceController_getAnalytics
@@ -210,7 +320,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
   /attendance/{id}:
     get:
       operationId: AttendanceController_findOne
@@ -223,7 +333,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
   /leaves:
     post:
       operationId: LeavesController_create
@@ -237,7 +347,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a5
+      tags: &a6
         - Leaves
     get:
       operationId: LeavesController_findAll
@@ -245,7 +355,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a6
   /leaves/{id}:
     get:
       operationId: LeavesController_findOne
@@ -258,7 +368,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a6
   /leaves/{id}/status:
     patch:
       operationId: LeavesController_updateStatus
@@ -277,7 +387,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a6
 info:
   title: Difmo CRM API
   description: The Difmo CRM API description
@@ -299,6 +409,12 @@ components:
     CreateCompanyDto:
       type: object
       properties: {}
+    CreateDepartmentDto:
+      type: object
+      properties: {}
+    UpdateDepartmentDto:
+      type: object
+      properties: {}
     CreateEmployeeDto:
       type: object
       properties: {}
@@ -306,6 +422,9 @@ components:
       type: object
       properties: {}
     CheckInDto:
+      type: object
+      properties: {}
+    BulkCheckInDto:
       type: object
       properties: {}
     CheckOutDto:

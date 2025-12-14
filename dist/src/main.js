@@ -59,7 +59,7 @@ async function bootstrap() {
     const yamlString = yaml.stringify(document, {});
     fs.writeFileSync('./swagger.yaml', yamlString);
     swagger_1.SwaggerModule.setup('api', app, document);
-    await app.listen(process.env.PORT ?? 3000);
+    await app.listen(process.env.PORT ?? 5000);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
