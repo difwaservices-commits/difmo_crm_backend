@@ -43,6 +43,11 @@ let AttendanceService = class AttendanceService {
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
+    getCurrentISTTime() {
+        const now = new Date();
+        const istString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+        return new Date(istString);
+    }
     async checkIn(checkInDto) {
         const today = new Date().toISOString().split('T')[0];
         const isOnLeave = await this.leavesService.isEmployeeOnLeave(checkInDto.employeeId, today);
@@ -57,7 +62,7 @@ let AttendanceService = class AttendanceService {
         }
         const employee = await this.employeeService.findOne(checkInDto.employeeId);
         if (employee && employee.company && employee.company.openingTime) {
-            const now = new Date();
+            const now = this.getCurrentISTTime();
             const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
             const openTime = new Date(now);
             openTime.setHours(openHour, openMinute, 0, 0);
@@ -76,7 +81,7 @@ let AttendanceService = class AttendanceService {
         if (existing) {
             throw new common_1.BadRequestException('Already checked in today');
         }
-        const now = new Date();
+        const now = this.getCurrentISTTime();
         const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         let status = 'present';
         if (employee && employee.company && employee.company.openingTime) {
@@ -134,7 +139,7 @@ let AttendanceService = class AttendanceService {
                 throw new common_1.ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check out.`);
             }
         }
-        const now = new Date();
+        const now = this.getCurrentISTTime();
         const checkOutTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         if (attendance.checkInTime) {
             const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);

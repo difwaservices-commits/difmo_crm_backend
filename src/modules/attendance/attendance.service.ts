@@ -35,6 +35,12 @@ export class AttendanceService {
         return R * c; // in metres
     }
 
+    private getCurrentISTTime(): Date {
+        const now = new Date();
+        const istString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+        return new Date(istString);
+    }
+
     async checkIn(checkInDto: CheckInDto): Promise<Attendance> {
         const today = new Date().toISOString().split('T')[0];
 
@@ -60,7 +66,7 @@ export class AttendanceService {
         // 3. Time Constraints based on Company Settings
         const employee = await this.employeeService.findOne(checkInDto.employeeId);
         if (employee && employee.company && employee.company.openingTime) {
-            const now = new Date();
+            const now = this.getCurrentISTTime();
             const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
             const openTime = new Date(now);
             openTime.setHours(openHour, openMinute, 0, 0);
@@ -86,7 +92,7 @@ export class AttendanceService {
             throw new BadRequestException('Already checked in today');
         }
 
-        const now = new Date();
+        const now = this.getCurrentISTTime();
         const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
         // Determine status
@@ -162,7 +168,7 @@ export class AttendanceService {
             }
         }
 
-        const now = new Date();
+        const now = this.getCurrentISTTime();
         const checkOutTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
         // Calculate work hours

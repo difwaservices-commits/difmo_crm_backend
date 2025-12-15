@@ -41,6 +41,7 @@ exports.AppModule = AppModule = __decorate([
                 imports: [config_1.ConfigModule],
                 useFactory: (configService) => {
                     const dbUrl = configService.get('DATABASE_URL');
+                    console.log('DATABASE_URL:', dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set');
                     if (dbUrl) {
                         return {
                             type: 'postgres',
@@ -52,6 +53,7 @@ exports.AppModule = AppModule = __decorate([
                             },
                         };
                     }
+                    console.log('Using SQLite Database');
                     return {
                         type: 'sqlite',
                         database: 'db.sqlite',
