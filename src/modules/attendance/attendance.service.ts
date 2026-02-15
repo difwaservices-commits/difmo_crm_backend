@@ -1,297 +1,358 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Attendance } from './attendance.entity';
-import { CheckInDto, CheckOutDto, CreateAttendanceDto } from './dto/attendance.dto';
+import {
+  CheckInDto,
+  CheckOutDto,
+  CreateAttendanceDto,
+} from './dto/attendance.dto';
 import { LeavesService } from '../leaves/leaves.service';
 import { EmployeeService } from '../employees/employee.service';
 
 @Injectable()
 export class AttendanceService {
-    // Office coordinates: 26.8604896, 81.0200511
-    private readonly OFFICE_LAT = 26.8604896;
-    private readonly OFFICE_LNG = 81.0200511;
-    private readonly MAX_DISTANCE_METERS = 100;
+  // Office coordinates: 26.8604896, 81.0200511
+  private readonly OFFICE_LAT = 26.8604896;
+  private readonly OFFICE_LNG = 81.0200511;
+  private readonly MAX_DISTANCE_METERS = 100;
 
-    constructor(
-        @InjectRepository(Attendance)
-        private attendanceRepository: Repository<Attendance>,
-        private leavesService: LeavesService,
-        private employeeService: EmployeeService,
-    ) { }
+  constructor(
+    @InjectRepository(Attendance)
+    private attendanceRepository: Repository<Attendance>,
+    private leavesService: LeavesService,
+    private employeeService: EmployeeService,
+  ) {}
 
-    private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-        const R = 6371e3; // metres
-        const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
-        const φ2 = lat2 * Math.PI / 180;
-        const Δφ = (lat2 - lat1) * Math.PI / 180;
-        const Δλ = (lon2 - lon1) * Math.PI / 180;
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    const R = 6371e3; // metres
+    const φ1 = (lat1 * Math.PI) / 180; // φ, λ in radians
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        return R * c; // in metres
+    return R * c; // in metres
+  }
+
+  private getISTDateString(): string {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  }
+
+  private getISTTimeParts() {
+    const istString = new Date().toLocaleTimeString('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour12: false,
+    });
+    const [hours, minutes, seconds] = istString.split(':').map(Number);
+    return { hours, minutes, seconds, timeString: istString };
+  }
+
+  async checkIn(checkInDto: CheckInDto): Promise<Attendance> {
+    const today = this.getISTDateString();
+
+    // 1. Check for Leave
+    const isOnLeave = await this.leavesService.isEmployeeOnLeave(
+      checkInDto.employeeId,
+      today,
+    );
+    if (isOnLeave) {
+      throw new BadRequestException(
+        'Cannot check in: Employee is on approved leave today.',
+      );
     }
 
-    private getISTDateString(): string {
-        return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    // 2. Geofencing Check
+    if (checkInDto.latitude && checkInDto.longitude) {
+      const distance = this.calculateDistance(
+        checkInDto.latitude,
+        checkInDto.longitude,
+        this.OFFICE_LAT,
+        this.OFFICE_LNG,
+      );
+      if (distance > this.MAX_DISTANCE_METERS) {
+        throw new ForbiddenException(
+          `You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`,
+        );
+      }
     }
 
-    private getISTTimeParts() {
-        const istString = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
-        const [hours, minutes, seconds] = istString.split(':').map(Number);
-        return { hours, minutes, seconds, timeString: istString };
+    // 3. Time Constraints based on Company Settings
+    const employee = await this.employeeService.findOne(checkInDto.employeeId);
+    if (employee && employee.company && employee.company.openingTime) {
+      const ist = this.getISTTimeParts();
+      const [openHour, openMinute] = employee.company.openingTime
+        .split(':')
+        .map(Number);
+
+      // Allow check-in 1 hour before opening time
+      const earliestHour = openHour - 1;
+
+      if (ist.hours < earliestHour) {
+        const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
+        throw new ForbiddenException(
+          `Cannot check in before ${earliestStr} AM.`,
+        );
+      }
     }
 
-    async checkIn(checkInDto: CheckInDto): Promise<Attendance> {
-        const today = this.getISTDateString();
+    // Check if already checked in today
+    const existing = await this.attendanceRepository.findOne({
+      where: {
+        employeeId: checkInDto.employeeId,
+        date: today as any,
+      },
+    });
 
-        // 1. Check for Leave
-        const isOnLeave = await this.leavesService.isEmployeeOnLeave(checkInDto.employeeId, today);
-        if (isOnLeave) {
-            throw new BadRequestException('Cannot check in: Employee is on approved leave today.');
-        }
-
-        // 2. Geofencing Check
-        if (checkInDto.latitude && checkInDto.longitude) {
-            const distance = this.calculateDistance(
-                checkInDto.latitude,
-                checkInDto.longitude,
-                this.OFFICE_LAT,
-                this.OFFICE_LNG
-            );
-            if (distance > this.MAX_DISTANCE_METERS) {
-                throw new ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`);
-            }
-        }
-
-        // 3. Time Constraints based on Company Settings
-        const employee = await this.employeeService.findOne(checkInDto.employeeId);
-        if (employee && employee.company && employee.company.openingTime) {
-            const ist = this.getISTTimeParts();
-            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
-
-            // Allow check-in 1 hour before opening time
-            const earliestHour = openHour - 1;
-
-            if (ist.hours < earliestHour) {
-                const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
-                throw new ForbiddenException(`Cannot check in before ${earliestStr} AM.`);
-            }
-        }
-
-        // Check if already checked in today
-        const existing = await this.attendanceRepository.findOne({
-            where: {
-                employeeId: checkInDto.employeeId,
-                date: today as any,
-            },
-        });
-
-        if (existing) {
-            throw new BadRequestException('Already checked in today');
-        }
-
-        const ist = this.getISTTimeParts();
-        const checkInTime = ist.timeString;
-
-        // Determine status
-        let status = 'present';
-        if (employee && employee.company && employee.company.openingTime) {
-            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
-            // Late if more than 15 mins after opening time
-            if (ist.hours > openHour || (ist.hours === openHour && ist.minutes > openMinute + 15)) {
-                status = 'late';
-            }
-        } else {
-            // Default logic if no company time set
-            const startHour = 9;
-            const startMinute = 0;
-            if (ist.hours > startHour || (ist.hours === startHour && ist.minutes > startMinute + 15)) {
-                status = 'late';
-            }
-        }
-
-        const attendance = this.attendanceRepository.create({
-            employeeId: checkInDto.employeeId,
-            date: today,
-            checkInTime,
-            status,
-            location: checkInDto.location,
-            notes: checkInDto.notes,
-        });
-
-        return this.attendanceRepository.save(attendance);
+    if (existing) {
+      throw new BadRequestException('Already checked in today');
     }
 
-    async bulkCheckIn(employeeIds: string[], notes?: string): Promise<any> {
-        const results: { success: string[], failed: { employeeId: string, error: any }[] } = {
-            success: [],
-            failed: []
-        };
+    const ist = this.getISTTimeParts();
+    const checkInTime = ist.timeString;
 
-        for (const employeeId of employeeIds) {
-            try {
-                await this.checkIn({ employeeId, notes, location: 'Bulk Check-in' });
-                results.success.push(employeeId);
-            } catch (error) {
-                results.failed.push({ employeeId, error: error.message });
-            }
-        }
-
-        return results;
+    // Determine status
+    let status = 'present';
+    if (employee && employee.company && employee.company.openingTime) {
+      const [openHour, openMinute] = employee.company.openingTime
+        .split(':')
+        .map(Number);
+      // Late if more than 15 mins after opening time
+      if (
+        ist.hours > openHour ||
+        (ist.hours === openHour && ist.minutes > openMinute + 15)
+      ) {
+        status = 'late';
+      }
+    } else {
+      // Default logic if no company time set
+      const startHour = 9;
+      const startMinute = 0;
+      if (
+        ist.hours > startHour ||
+        (ist.hours === startHour && ist.minutes > startMinute + 15)
+      ) {
+        status = 'late';
+      }
     }
 
-    async checkOut(checkOutDto: CheckOutDto): Promise<Attendance> {
-        const attendance = await this.attendanceRepository.findOne({
-            where: { id: checkOutDto.attendanceId },
-        });
+    const attendance = this.attendanceRepository.create({
+      employeeId: checkInDto.employeeId,
+      date: today,
+      checkInTime,
+      status,
+      location: checkInDto.location,
+      notes: checkInDto.notes,
+    });
 
-        if (!attendance) {
-            throw new NotFoundException('Attendance record not found');
-        }
+    return this.attendanceRepository.save(attendance);
+  }
 
-        if (attendance.checkOutTime) {
-            throw new BadRequestException('Already checked out');
-        }
+  async bulkCheckIn(employeeIds: string[], notes?: string): Promise<any> {
+    const results: {
+      success: string[];
+      failed: { employeeId: string; error: any }[];
+    } = {
+      success: [],
+      failed: [],
+    };
 
-        // Geofencing Check for Checkout
-        if (checkOutDto.latitude && checkOutDto.longitude) {
-            const distance = this.calculateDistance(
-                checkOutDto.latitude,
-                checkOutDto.longitude,
-                this.OFFICE_LAT,
-                this.OFFICE_LNG
-            );
-            if (distance > this.MAX_DISTANCE_METERS) {
-                throw new ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check out.`);
-            }
-        }
-
-        const ist = this.getISTTimeParts();
-        const checkOutTime = ist.timeString;
-
-        // Calculate work hours
-        if (attendance.checkInTime) {
-            const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);
-            const checkOut = new Date(`2000-01-01 ${checkOutTime}`);
-            const workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
-            attendance.workHours = Math.round(workHours * 100) / 100;
-
-            // Overtime logic
-            if (attendance.workHours > 8) {
-                attendance.overtime = Math.round((attendance.workHours - 8) * 100) / 100;
-            }
-        }
-
-        attendance.checkOutTime = checkOutTime;
-
-        // Early departure logic
-        const endHour = 17;
-        if (ist.hours < endHour) {
-            if (attendance.status === 'present') {
-                attendance.status = 'early_departure';
-            }
-        }
-
-        if (checkOutDto.notes) {
-            attendance.notes = checkOutDto.notes;
-        }
-
-        return this.attendanceRepository.save(attendance);
+    for (const employeeId of employeeIds) {
+      try {
+        await this.checkIn({ employeeId, notes, location: 'Bulk Check-in' });
+        results.success.push(employeeId);
+      } catch (error) {
+        results.failed.push({ employeeId, error: error.message });
+      }
     }
 
-    async create(createAttendanceDto: CreateAttendanceDto): Promise<Attendance> {
-        const attendance = this.attendanceRepository.create(createAttendanceDto);
+    return results;
+  }
 
-        if (attendance.checkInTime && attendance.checkOutTime) {
-            const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);
-            const checkOut = new Date(`2000-01-01 ${attendance.checkOutTime}`);
-            const workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
-            attendance.workHours = Math.round(workHours * 100) / 100;
-        }
+  async checkOut(checkOutDto: CheckOutDto): Promise<Attendance> {
+    const attendance = await this.attendanceRepository.findOne({
+      where: { id: checkOutDto.attendanceId },
+    });
 
-        return this.attendanceRepository.save(attendance);
+    if (!attendance) {
+      throw new NotFoundException('Attendance record not found');
     }
 
-    async findAll(filters?: any): Promise<Attendance[]> {
-        const query = this.attendanceRepository.createQueryBuilder('attendance')
-            .leftJoinAndSelect('attendance.employee', 'employee')
-            .leftJoinAndSelect('employee.user', 'user')
-            .leftJoinAndSelect('employee.company', 'company');
-
-        if (filters?.companyId) {
-            query.andWhere('employee.companyId = :companyId', { companyId: filters.companyId });
-        }
-
-        if (filters?.employeeId) {
-            query.andWhere('attendance.employeeId = :employeeId', { employeeId: filters.employeeId });
-        }
-
-        if (filters?.startDate && filters?.endDate) {
-            query.andWhere('attendance.date BETWEEN :startDate AND :endDate', {
-                startDate: filters.startDate,
-                endDate: filters.endDate,
-            });
-        }
-
-        if (filters?.status) {
-            query.andWhere('attendance.status = :status', { status: filters.status });
-        }
-
-        query.orderBy('attendance.date', 'DESC');
-
-        return query.getMany();
+    if (attendance.checkOutTime) {
+      throw new BadRequestException('Already checked out');
     }
 
-    async findOne(id: string): Promise<Attendance | null> {
-        return this.attendanceRepository.findOne({
-            where: { id },
-            relations: ['employee', 'employee.user'],
-        });
+    // Geofencing Check for Checkout
+    if (checkOutDto.latitude && checkOutDto.longitude) {
+      const distance = this.calculateDistance(
+        checkOutDto.latitude,
+        checkOutDto.longitude,
+        this.OFFICE_LAT,
+        this.OFFICE_LNG,
+      );
+      if (distance > this.MAX_DISTANCE_METERS) {
+        throw new ForbiddenException(
+          `You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check out.`,
+        );
+      }
     }
 
-    async getTodayAttendance(employeeId: string): Promise<Attendance | null> {
-        const today = this.getISTDateString();
-        return this.attendanceRepository.findOne({
-            where: {
-                employeeId,
-                date: new Date(today) as any,
-            },
-        });
+    const ist = this.getISTTimeParts();
+    const checkOutTime = ist.timeString;
+
+    // Calculate work hours
+    if (attendance.checkInTime) {
+      const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);
+      const checkOut = new Date(`2000-01-01 ${checkOutTime}`);
+      const workHours =
+        (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
+      attendance.workHours = Math.round(workHours * 100) / 100;
+
+      // Overtime logic
+      if (attendance.workHours > 8) {
+        attendance.overtime =
+          Math.round((attendance.workHours - 8) * 100) / 100;
+      }
     }
 
-    async getAnalytics(filters?: any): Promise<any> {
-        const query = this.attendanceRepository.createQueryBuilder('attendance');
+    attendance.checkOutTime = checkOutTime;
 
-        if (filters?.startDate && filters?.endDate) {
-            query.where('attendance.date BETWEEN :startDate AND :endDate', {
-                startDate: filters.startDate,
-                endDate: filters.endDate,
-            });
-        }
+    // Early departure logic
+    const endHour = 17;
+    if (ist.hours < endHour) {
+      if (attendance.status === 'present') {
+        attendance.status = 'early_departure';
+      }
+    }
 
-        if (filters?.employeeId) {
-            query.andWhere('attendance.employeeId = :employeeId', { employeeId: filters.employeeId });
-        }
+    if (checkOutDto.notes) {
+      attendance.notes = checkOutDto.notes;
+    }
 
-        const total = await query.getCount();
-        const present = await query.clone().andWhere('attendance.status = :status', { status: 'present' }).getCount();
-        const absent = await query.clone().andWhere('attendance.status = :status', { status: 'absent' }).getCount();
-        const late = await query.clone().andWhere('attendance.status = :status', { status: 'late' }).getCount();
+    return this.attendanceRepository.save(attendance);
+  }
 
-        const avgWorkHours = await query
-            .select('AVG(attendance.workHours)', 'avg')
-            .getRawOne();
+  async create(createAttendanceDto: CreateAttendanceDto): Promise<Attendance> {
+    const attendance = this.attendanceRepository.create(createAttendanceDto);
 
-        const isPostgres = this.attendanceRepository.manager.connection.options.type === 'postgres';
+    if (attendance.checkInTime && attendance.checkOutTime) {
+      const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);
+      const checkOut = new Date(`2000-01-01 ${attendance.checkOutTime}`);
+      const workHours =
+        (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
+      attendance.workHours = Math.round(workHours * 100) / 100;
+    }
 
-        // 1. Weekly Attendance Trend (Last 7 Days)
-        let weeklyTrendSql = '';
-        if (isPostgres) {
-            weeklyTrendSql = `
+    return this.attendanceRepository.save(attendance);
+  }
+
+  async findAll(filters?: any): Promise<Attendance[]> {
+    const query = this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .leftJoinAndSelect('attendance.employee', 'employee')
+      .leftJoinAndSelect('employee.user', 'user')
+      .leftJoinAndSelect('employee.company', 'company');
+
+    if (filters?.companyId) {
+      query.andWhere('employee.companyId = :companyId', {
+        companyId: filters.companyId,
+      });
+    }
+
+    if (filters?.employeeId) {
+      query.andWhere('attendance.employeeId = :employeeId', {
+        employeeId: filters.employeeId,
+      });
+    }
+
+    if (filters?.startDate && filters?.endDate) {
+      query.andWhere('attendance.date BETWEEN :startDate AND :endDate', {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      });
+    }
+
+    if (filters?.status) {
+      query.andWhere('attendance.status = :status', { status: filters.status });
+    }
+
+    query.orderBy('attendance.date', 'DESC');
+
+    return query.getMany();
+  }
+
+  async findOne(id: string): Promise<Attendance | null> {
+    return this.attendanceRepository.findOne({
+      where: { id },
+      relations: ['employee', 'employee.user'],
+    });
+  }
+
+  async getTodayAttendance(employeeId: string): Promise<Attendance | null> {
+    const today = this.getISTDateString();
+    return this.attendanceRepository.findOne({
+      where: {
+        employeeId,
+        date: new Date(today) as any,
+      },
+    });
+  }
+
+  async getAnalytics(filters?: any): Promise<any> {
+    const query = this.attendanceRepository.createQueryBuilder('attendance');
+
+    if (filters?.startDate && filters?.endDate) {
+      query.where('attendance.date BETWEEN :startDate AND :endDate', {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      });
+    }
+
+    if (filters?.employeeId) {
+      query.andWhere('attendance.employeeId = :employeeId', {
+        employeeId: filters.employeeId,
+      });
+    }
+
+    const total = await query.getCount();
+    const present = await query
+      .clone()
+      .andWhere('attendance.status = :status', { status: 'present' })
+      .getCount();
+    const absent = await query
+      .clone()
+      .andWhere('attendance.status = :status', { status: 'absent' })
+      .getCount();
+    const late = await query
+      .clone()
+      .andWhere('attendance.status = :status', { status: 'late' })
+      .getCount();
+
+    const avgWorkHours = await query
+      .select('AVG(attendance.workHours)', 'avg')
+      .getRawOne();
+
+    const isPostgres =
+      this.attendanceRepository.manager.connection.options.type === 'postgres';
+
+    // 1. Weekly Attendance Trend (Last 7 Days)
+    let weeklyTrendSql = '';
+    if (isPostgres) {
+      weeklyTrendSql = `
                 SELECT 
                     EXTRACT(DOW FROM date) as "dayIndex",
                     TO_CHAR(date, 'Dy') as day,
@@ -303,8 +364,8 @@ export class AttendanceService {
                 GROUP BY "dayIndex", day
                 ORDER BY "dayIndex"
             `;
-        } else {
-            weeklyTrendSql = `
+    } else {
+      weeklyTrendSql = `
                 SELECT 
                     strftime('%w', date) as dayIndex,
                     CASE strftime('%w', date)
@@ -324,28 +385,31 @@ export class AttendanceService {
                 GROUP BY dayIndex
                 ORDER BY dayIndex
             `;
-        }
-        const weeklyTrend = await this.attendanceRepository.query(weeklyTrendSql);
+    }
+    const weeklyTrend = await this.attendanceRepository.query(weeklyTrendSql);
 
-        // 2. Attendance Distribution (Today)
-        const today = new Date().toISOString().split('T')[0];
-        // Parameter placeholder syntax differs: $1 for Postgres, ? for SQLite
-        // However, TypeORM query() usually handles ? for both if not using native driver directly, 
-        // but for safety with Postgres we can use simple string interpolation or $1 if we are sure.
-        // Let's use standard TypeORM parameter handling which maps parameters.
-        const distributionSql = `
+    // 2. Attendance Distribution (Today)
+    const today = new Date().toISOString().split('T')[0];
+    // Parameter placeholder syntax differs: $1 for Postgres, ? for SQLite
+    // However, TypeORM query() usually handles ? for both if not using native driver directly,
+    // but for safety with Postgres we can use simple string interpolation or $1 if we are sure.
+    // Let's use standard TypeORM parameter handling which maps parameters.
+    const distributionSql = `
             SELECT status as name, COUNT(*) as value
             FROM attendance
             WHERE date = $1
             GROUP BY status
         `.replace('$1', isPostgres ? '$1' : '?');
 
-        const distribution = await this.attendanceRepository.query(distributionSql, [this.getISTDateString()]);
+    const distribution = await this.attendanceRepository.query(
+      distributionSql,
+      [this.getISTDateString()],
+    );
 
-        // 3. 6-Month Punctuality Trend
-        let punctualityTrendSql = '';
-        if (isPostgres) {
-            punctualityTrendSql = `
+    // 3. 6-Month Punctuality Trend
+    let punctualityTrendSql = '';
+    if (isPostgres) {
+      punctualityTrendSql = `
                 SELECT 
                     TO_CHAR(date, 'YYYY-MM') as "monthKey",
                     TO_CHAR(date, 'Mon') as month,
@@ -357,8 +421,8 @@ export class AttendanceService {
                 GROUP BY "monthKey", month
                 ORDER BY "monthKey"
             `;
-        } else {
-            punctualityTrendSql = `
+    } else {
+      punctualityTrendSql = `
                 SELECT 
                     strftime('%Y-%m', date) as monthKey,
                     CASE strftime('%m', date)
@@ -383,18 +447,19 @@ export class AttendanceService {
                 GROUP BY monthKey
                 ORDER BY monthKey
             `;
-        }
-        const punctualityTrend = await this.attendanceRepository.query(punctualityTrendSql);
-
-        return {
-            total,
-            present,
-            absent,
-            late,
-            averageWorkHours: avgWorkHours?.avg || 0,
-            weeklyTrend,
-            distribution,
-            punctualityTrend
-        };
     }
+    const punctualityTrend =
+      await this.attendanceRepository.query(punctualityTrendSql);
+
+    return {
+      total,
+      present,
+      absent,
+      late,
+      averageWorkHours: avgWorkHours?.avg || 0,
+      weeklyTrend,
+      distribution,
+      punctualityTrend,
+    };
+  }
 }

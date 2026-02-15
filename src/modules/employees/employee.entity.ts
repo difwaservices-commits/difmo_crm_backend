@@ -1,72 +1,88 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../users/user.entity';
 import { Company } from '../companies/company.entity';
 import { Department } from '../departments/department.entity';
+import { Designation } from '../designations/designation.entity';
 
 @Entity()
 export class Employee {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => User)
-    @JoinColumn()
-    user: User;
+  @ManyToOne(() => User)
+  @JoinColumn()
+  user: User;
 
-    @Column()
-    userId: string;
+  @Column()
+  userId: string;
 
-    @Column({ unique: true, nullable: true })
-    employeeCode: string; // e.g., DIF0001
+  @Column({ unique: true, nullable: true })
+  employeeCode: string; // e.g., DIF0001
 
-    @ManyToOne(() => Company, (company) => company.users)
-    company: Company;
+  @ManyToOne(() => Company, (company) => company.users)
+  company: Company;
 
-    @Column({ nullable: true })
-    companyId: string;
+  @Column({ nullable: true })
+  companyId: string;
 
-    @ManyToOne(() => Department, { nullable: true })
-    @JoinColumn()
-    department: Department;
+  @ManyToOne(() => Department, { nullable: true })
+  @JoinColumn()
+  department: Department;
 
-    @Column({ nullable: true })
-    departmentId: string;
+  @Column({ nullable: true })
+  departmentId: string;
 
-    @Column()
-    role: string;
+  @ManyToOne(() => Designation, { nullable: true })
+  @JoinColumn()
+  designation: Designation;
 
-    @Column({ type: 'date' })
-    hireDate: Date;
+  @Column({ nullable: true })
+  designationId: string;
 
-    @Column({ nullable: true })
-    salary: string;
+  @Column({ nullable: true })
+  role: string;
 
-    @Column({ nullable: true })
-    manager: string;
+  @Column({ type: 'date' })
+  hireDate: Date;
 
-    @Column({ nullable: true })
-    branch: string;
+  @Column({ nullable: true })
+  salary: string;
 
-    @Column({ default: 'full-time' })
-    employmentType: string; // full-time, part-time, contract
+  @Column({ nullable: true })
+  manager: string;
 
-    @Column({ default: 'active' })
-    status: string; // active, inactive, pending
+  @Column({ nullable: true })
+  branch: string;
 
-    @Column({ nullable: true })
-    address: string;
+  @Column({ default: 'full-time' })
+  employmentType: string; // full-time, part-time, contract
 
-    @Column({ nullable: true })
-    emergencyContact: string;
+  @Column({ default: 'active' })
+  status: string; // active, inactive, pending
 
-    @Column({ nullable: true })
-    emergencyPhone: string;
+  @Column({ nullable: true })
+  address: string;
 
-    @Column({ type: 'simple-array', nullable: true })
-    skills: string[];
+  @Column({ nullable: true })
+  emergencyContact: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ nullable: true })
+  emergencyPhone: string;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @Column({ type: 'simple-array', nullable: true })
+  skills: string[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

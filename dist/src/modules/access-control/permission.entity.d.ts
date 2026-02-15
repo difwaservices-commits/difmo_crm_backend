@@ -3,4 +3,5 @@ export declare class Permission {
     action: string;
     resource: string;
     description: string;
+    conditions: string;
 }

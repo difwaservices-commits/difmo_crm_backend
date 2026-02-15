@@ -10,4 +10,4 @@ import { Company } from './company.entity';
   controllers: [CompanyController],
   exports: [CompanyService],
 })
-export class CompanyModule { }
+export class CompanyModule {}

@@ -16,6 +16,7 @@ let Permission = class Permission {
     action;
     resource;
     description;
+    conditions;
 };
 exports.Permission = Permission;
 __decorate([
@@ -34,6 +35,10 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Permission.prototype, "description", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Permission.prototype, "conditions", void 0);
 exports.Permission = Permission = __decorate([
     (0, typeorm_1.Entity)()
 ], Permission);

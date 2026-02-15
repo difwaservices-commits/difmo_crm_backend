@@ -33,13 +33,12 @@ let AttendanceService = class AttendanceService {
     }
     calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
-        const φ1 = lat1 * Math.PI / 180;
-        const φ2 = lat2 * Math.PI / 180;
-        const Δφ = (lat2 - lat1) * Math.PI / 180;
-        const Δλ = (lon2 - lon1) * Math.PI / 180;
+        const φ1 = (lat1 * Math.PI) / 180;
+        const φ2 = (lat2 * Math.PI) / 180;
+        const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+        const Δλ = ((lon2 - lon1) * Math.PI) / 180;
         const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
@@ -47,7 +46,10 @@ let AttendanceService = class AttendanceService {
         return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
     }
     getISTTimeParts() {
-        const istString = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+        const istString = new Date().toLocaleTimeString('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            hour12: false,
+        });
         const [hours, minutes, seconds] = istString.split(':').map(Number);
         return { hours, minutes, seconds, timeString: istString };
     }
@@ -66,7 +68,9 @@ let AttendanceService = class AttendanceService {
         const employee = await this.employeeService.findOne(checkInDto.employeeId);
         if (employee && employee.company && employee.company.openingTime) {
             const ist = this.getISTTimeParts();
-            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
+            const [openHour, openMinute] = employee.company.openingTime
+                .split(':')
+                .map(Number);
             const earliestHour = openHour - 1;
             if (ist.hours < earliestHour) {
                 const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
@@ -86,15 +90,19 @@ let AttendanceService = class AttendanceService {
         const checkInTime = ist.timeString;
         let status = 'present';
         if (employee && employee.company && employee.company.openingTime) {
-            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
-            if (ist.hours > openHour || (ist.hours === openHour && ist.minutes > openMinute + 15)) {
+            const [openHour, openMinute] = employee.company.openingTime
+                .split(':')
+                .map(Number);
+            if (ist.hours > openHour ||
+                (ist.hours === openHour && ist.minutes > openMinute + 15)) {
                 status = 'late';
             }
         }
         else {
             const startHour = 9;
             const startMinute = 0;
-            if (ist.hours > startHour || (ist.hours === startHour && ist.minutes > startMinute + 15)) {
+            if (ist.hours > startHour ||
+                (ist.hours === startHour && ist.minutes > startMinute + 15)) {
                 status = 'late';
             }
         }
@@ -111,7 +119,7 @@ let AttendanceService = class AttendanceService {
     async bulkCheckIn(employeeIds, notes) {
         const results = {
             success: [],
-            failed: []
+            failed: [],
         };
         for (const employeeId of employeeIds) {
             try {
@@ -148,7 +156,8 @@ let AttendanceService = class AttendanceService {
             const workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
             attendance.workHours = Math.round(workHours * 100) / 100;
             if (attendance.workHours > 8) {
-                attendance.overtime = Math.round((attendance.workHours - 8) * 100) / 100;
+                attendance.overtime =
+                    Math.round((attendance.workHours - 8) * 100) / 100;
             }
         }
         attendance.checkOutTime = checkOutTime;
@@ -174,15 +183,20 @@ let AttendanceService = class AttendanceService {
         return this.attendanceRepository.save(attendance);
     }
     async findAll(filters) {
-        const query = this.attendanceRepository.createQueryBuilder('attendance')
+        const query = this.attendanceRepository
+            .createQueryBuilder('attendance')
             .leftJoinAndSelect('attendance.employee', 'employee')
             .leftJoinAndSelect('employee.user', 'user')
             .leftJoinAndSelect('employee.company', 'company');
         if (filters?.companyId) {
-            query.andWhere('employee.companyId = :companyId', { companyId: filters.companyId });
+            query.andWhere('employee.companyId = :companyId', {
+                companyId: filters.companyId,
+            });
         }
         if (filters?.employeeId) {
-            query.andWhere('attendance.employeeId = :employeeId', { employeeId: filters.employeeId });
+            query.andWhere('attendance.employeeId = :employeeId', {
+                employeeId: filters.employeeId,
+            });
         }
         if (filters?.startDate && filters?.endDate) {
             query.andWhere('attendance.date BETWEEN :startDate AND :endDate', {
@@ -220,12 +234,23 @@ let AttendanceService = class AttendanceService {
             });
         }
         if (filters?.employeeId) {
-            query.andWhere('attendance.employeeId = :employeeId', { employeeId: filters.employeeId });
+            query.andWhere('attendance.employeeId = :employeeId', {
+                employeeId: filters.employeeId,
+            });
         }
         const total = await query.getCount();
-        const present = await query.clone().andWhere('attendance.status = :status', { status: 'present' }).getCount();
-        const absent = await query.clone().andWhere('attendance.status = :status', { status: 'absent' }).getCount();
-        const late = await query.clone().andWhere('attendance.status = :status', { status: 'late' }).getCount();
+        const present = await query
+            .clone()
+            .andWhere('attendance.status = :status', { status: 'present' })
+            .getCount();
+        const absent = await query
+            .clone()
+            .andWhere('attendance.status = :status', { status: 'absent' })
+            .getCount();
+        const late = await query
+            .clone()
+            .andWhere('attendance.status = :status', { status: 'late' })
+            .getCount();
         const avgWorkHours = await query
             .select('AVG(attendance.workHours)', 'avg')
             .getRawOne();
@@ -327,7 +352,7 @@ let AttendanceService = class AttendanceService {
             averageWorkHours: avgWorkHours?.avg || 0,
             weeklyTrend,
             distribution,
-            punctualityTrend
+            punctualityTrend,
         };
     }
 };

@@ -28,6 +28,21 @@ const employee_entity_1 = require("./modules/employees/employee.entity");
 const attendance_entity_1 = require("./modules/attendance/attendance.entity");
 const leaves_module_1 = require("./modules/leaves/leaves.module");
 const leave_entity_1 = require("./modules/leaves/leave.entity");
+const designation_module_1 = require("./modules/designations/designation.module");
+const designation_entity_1 = require("./modules/designations/designation.entity");
+const client_entity_1 = require("./modules/projects/entities/client.entity");
+const project_entity_1 = require("./modules/projects/entities/project.entity");
+const task_entity_1 = require("./modules/projects/entities/task.entity");
+const payroll_entity_1 = require("./modules/finance/entities/payroll.entity");
+const expense_entity_1 = require("./modules/finance/entities/expense.entity");
+const audit_log_entity_1 = require("./modules/audit-logs/audit-log.entity");
+const time_entry_entity_1 = require("./modules/time-tracking/time-entry.entity");
+const mail_module_1 = require("./modules/mail/mail.module");
+const projects_module_1 = require("./modules/projects/projects.module");
+const finance_module_1 = require("./modules/finance/finance.module");
+const audit_log_module_1 = require("./modules/audit-logs/audit-log.module");
+const time_tracking_module_1 = require("./modules/time-tracking/time-tracking.module");
+const dashboard_controller_1 = require("./modules/dashboard/dashboard.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,11 +57,29 @@ exports.AppModule = AppModule = __decorate([
                 useFactory: (configService) => {
                     const dbUrl = configService.get('DATABASE_URL');
                     console.log('DATABASE_URL:', dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set');
+                    const entities = [
+                        company_entity_1.Company,
+                        user_entity_1.User,
+                        department_entity_1.Department,
+                        role_entity_1.Role,
+                        permission_entity_1.Permission,
+                        employee_entity_1.Employee,
+                        attendance_entity_1.Attendance,
+                        leave_entity_1.Leave,
+                        designation_entity_1.Designation,
+                        client_entity_1.Client,
+                        project_entity_1.Project,
+                        task_entity_1.Task,
+                        payroll_entity_1.Payroll,
+                        expense_entity_1.Expense,
+                        audit_log_entity_1.AuditLog,
+                        time_entry_entity_1.TimeEntry,
+                    ];
                     if (dbUrl) {
                         return {
                             type: 'postgres',
                             url: dbUrl,
-                            entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance, leave_entity_1.Leave],
+                            entities,
                             synchronize: true,
                             ssl: {
                                 rejectUnauthorized: false,
@@ -57,7 +90,7 @@ exports.AppModule = AppModule = __decorate([
                     return {
                         type: 'sqlite',
                         database: 'db.sqlite',
-                        entities: [company_entity_1.Company, user_entity_1.User, department_entity_1.Department, role_entity_1.Role, permission_entity_1.Permission, employee_entity_1.Employee, attendance_entity_1.Attendance, leave_entity_1.Leave],
+                        entities,
                         synchronize: true,
                     };
                 },
@@ -71,8 +104,14 @@ exports.AppModule = AppModule = __decorate([
             employee_module_1.EmployeeModule,
             attendance_module_1.AttendanceModule,
             leaves_module_1.LeavesModule,
+            designation_module_1.DesignationModule,
+            mail_module_1.MailModule,
+            projects_module_1.ProjectsModule,
+            finance_module_1.FinanceModule,
+            audit_log_module_1.AuditLogModule,
+            time_tracking_module_1.TimeTrackingModule,
         ],
-        controllers: [app_controller_1.AppController],
+        controllers: [app_controller_1.AppController, dashboard_controller_1.DashboardController],
         providers: [app_service_1.AppService],
     })
 ], AppModule);

@@ -69,7 +69,7 @@ let UserService = class UserService {
             ...userData,
             password: hashedPassword,
             company: companyId ? { id: companyId } : undefined,
-            isActive: true
+            isActive: true,
         });
         await this.userRepository.save(user);
         return user;
@@ -77,27 +77,35 @@ let UserService = class UserService {
     async findByEmail(email) {
         return this.userRepository.findOne({
             where: { email },
-            relations: ['company', 'roles', 'roles.permissions']
+            relations: ['company', 'roles', 'roles.permissions'],
         });
     }
     async findById(id) {
         return this.userRepository.findOne({
             where: { id },
-            relations: ['company', 'roles', 'roles.permissions']
+            relations: ['company', 'roles', 'roles.permissions'],
         });
     }
     async update(id, updateUserDto) {
-        await this.userRepository.update(id, updateUserDto);
         const user = await this.findById(id);
         if (!user) {
             throw new Error(`User with ID ${id} not found`);
         }
-        return user;
+        Object.assign(user, updateUserDto);
+        return this.userRepository.save(user);
+    }
+    async findRolesByIds(ids) {
+        return this.roleRepository.find({
+            where: { id: (0, typeorm_2.In)(ids) },
+        });
+    }
+    async saveUser(user) {
+        return this.userRepository.save(user);
     }
     async assignRole(userId, roleName) {
         const user = await this.userRepository.findOne({
             where: { id: userId },
-            relations: ['roles']
+            relations: ['roles'],
         });
         if (!user) {
             throw new Error('User not found');
@@ -111,7 +119,7 @@ let UserService = class UserService {
             });
             await this.roleRepository.save(role);
         }
-        const hasRole = user.roles.some(r => r.id === role.id);
+        const hasRole = user.roles?.some((r) => r.id === role.id);
         if (!hasRole) {
             if (!user.roles)
                 user.roles = [];

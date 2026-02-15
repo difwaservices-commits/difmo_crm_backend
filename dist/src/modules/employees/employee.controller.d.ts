@@ -35,7 +35,6 @@ export declare class EmployeeController {
             lastName: string;
             phone: string;
             isActive: boolean;
-            avatar: any;
         } | null;
         company: {
             id: string;

@@ -5,9 +5,9 @@ import { LeavesController } from './leaves.controller';
 import { Leave } from './leave.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Leave])],
-    controllers: [LeavesController],
-    providers: [LeavesService],
-    exports: [LeavesService],
+  imports: [TypeOrmModule.forFeature([Leave])],
+  controllers: [LeavesController],
+  providers: [LeavesService],
+  exports: [LeavesService],
 })
-export class LeavesModule { }
+export class LeavesModule {}

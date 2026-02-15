@@ -13,5 +13,7 @@ export declare class UserService {
     findByEmail(email: string): Promise<User | null>;
     findById(id: string): Promise<User | null>;
     update(id: string, updateUserDto: Partial<User>): Promise<User>;
+    findRolesByIds(ids: string[]): Promise<Role[]>;
+    saveUser(user: User): Promise<User>;
     assignRole(userId: string, roleName: string): Promise<User>;
 }

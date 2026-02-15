@@ -62,7 +62,9 @@ __decorate([
     __metadata("design:type", company_entity_1.Company)
 ], User.prototype, "company", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => department_entity_1.Department, (department) => department.users, { nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => department_entity_1.Department, (department) => department.users, {
+        nullable: true,
+    }),
     __metadata("design:type", department_entity_1.Department)
 ], User.prototype, "department", void 0);
 __decorate([

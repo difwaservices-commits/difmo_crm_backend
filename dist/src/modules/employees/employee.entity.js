@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../users/user.entity");
 const company_entity_1 = require("../companies/company.entity");
 const department_entity_1 = require("../departments/department.entity");
+const designation_entity_1 = require("../designations/designation.entity");
 let Employee = class Employee {
     id;
     user;
@@ -23,6 +24,8 @@ let Employee = class Employee {
     companyId;
     department;
     departmentId;
+    designation;
+    designationId;
     role;
     hireDate;
     salary;
@@ -73,7 +76,16 @@ __decorate([
     __metadata("design:type", String)
 ], Employee.prototype, "departmentId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.ManyToOne)(() => designation_entity_1.Designation, { nullable: true }),
+    (0, typeorm_1.JoinColumn)(),
+    __metadata("design:type", designation_entity_1.Designation)
+], Employee.prototype, "designation", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Employee.prototype, "designationId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Employee.prototype, "role", void 0);
 __decorate([
