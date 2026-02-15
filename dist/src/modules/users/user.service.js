@@ -50,11 +50,14 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./user.entity");
+const role_entity_1 = require("../access-control/role.entity");
 const bcrypt = __importStar(require("bcrypt"));
 let UserService = class UserService {
     userRepository;
-    constructor(userRepository) {
+    roleRepository;
+    constructor(userRepository, roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
     async create(createUserDto) {
         if (!createUserDto.password) {
@@ -66,8 +69,10 @@ let UserService = class UserService {
             ...userData,
             password: hashedPassword,
             company: companyId ? { id: companyId } : undefined,
+            isActive: true
         });
-        return this.userRepository.save(user);
+        await this.userRepository.save(user);
+        return user;
     }
     async findByEmail(email) {
         return this.userRepository.findOne({
@@ -89,11 +94,40 @@ let UserService = class UserService {
         }
         return user;
     }
+    async assignRole(userId, roleName) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            relations: ['roles']
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        let role = await this.roleRepository.findOne({ where: { name: roleName } });
+        if (!role) {
+            console.log(`[UserService] Role '${roleName}' not found, creating...`);
+            role = this.roleRepository.create({
+                name: roleName,
+                description: `Default ${roleName} role`,
+            });
+            await this.roleRepository.save(role);
+        }
+        const hasRole = user.roles.some(r => r.id === role.id);
+        if (!hasRole) {
+            if (!user.roles)
+                user.roles = [];
+            user.roles.push(role);
+            await this.userRepository.save(user);
+            console.log(`[UserService] Assigned role '${roleName}' to user ${user.email}`);
+        }
+        return user;
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(role_entity_1.Role)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

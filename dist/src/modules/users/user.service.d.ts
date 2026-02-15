@@ -1,9 +1,11 @@
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
+import { Role } from '../access-control/role.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 export declare class UserService {
     private userRepository;
-    constructor(userRepository: Repository<User>);
+    private roleRepository;
+    constructor(userRepository: Repository<User>, roleRepository: Repository<Role>);
     create(createUserDto: Partial<CreateUserDto> & {
         phone?: string;
         companyId?: string;
@@ -11,4 +13,5 @@ export declare class UserService {
     findByEmail(email: string): Promise<User | null>;
     findById(id: string): Promise<User | null>;
     update(id: string, updateUserDto: Partial<User>): Promise<User>;
+    assignRole(userId: string, roleName: string): Promise<User>;
 }

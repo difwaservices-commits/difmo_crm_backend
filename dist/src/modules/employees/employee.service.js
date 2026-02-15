@@ -51,6 +51,14 @@ let EmployeeService = class EmployeeService {
         if (!userId) {
             throw new Error('User ID is required or sufficient details to create a user');
         }
+        const user = await this.userService.findById(userId);
+        const isAdmin = user?.roles?.some(r => ['Super Admin', 'Admin'].includes(r.name));
+        if (!isAdmin) {
+            await this.userService.assignRole(userId, 'Employee');
+        }
+        else {
+            console.log(`[EmployeeService] Skipping Role assignment for user ${user?.email} as they are Admin/Super Admin`);
+        }
         const employee = this.employeeRepository.create({
             ...createEmployeeDto,
             userId
@@ -150,6 +158,31 @@ let EmployeeService = class EmployeeService {
             query.where('employee.companyId = :companyId', { companyId });
         }
         return query.getCount();
+    }
+    async fixEmployeeRoles(companyId) {
+        console.log('[EmployeeService] Fixing employee roles...');
+        const employees = await this.findAll({});
+        let count = 0;
+        let skipped = 0;
+        for (const employee of employees) {
+            if (employee.userId) {
+                try {
+                    const user = await this.userService.findById(employee.userId);
+                    const isAdmin = user?.roles?.some(r => ['Super Admin', 'Admin'].includes(r.name));
+                    if (isAdmin) {
+                        console.log(`[EmployeeService] Skipping user ${user?.email} as they are Admin/Super Admin`);
+                        skipped++;
+                        continue;
+                    }
+                    await this.userService.assignRole(employee.userId, 'Employee');
+                    count++;
+                }
+                catch (e) {
+                    console.error(`[EmployeeService] Failed to assign role to user ${employee.userId}:`, e);
+                }
+            }
+        }
+        return { message: `Fixed roles for ${count} employees. Skipped ${skipped} admins.` };
     }
 };
 exports.EmployeeService = EmployeeService;

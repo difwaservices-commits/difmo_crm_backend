@@ -180,6 +180,14 @@ paths:
         "200":
           description: ""
       tags: *a4
+  /employees/fix-roles:
+    post:
+      operationId: EmployeeController_fixRoles
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a4
   /employees/stats/count:
     get:
       operationId: EmployeeController_getCount

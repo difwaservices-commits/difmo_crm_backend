@@ -4,6 +4,8 @@ import { CompanyService } from '../companies/company.service';
 import { UserService } from '../users/user.service';
 import * as bcrypt from 'bcrypt';
 
+
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -39,7 +41,7 @@ export class AuthService {
                 industry: data.industry,
                 size: data.companySize,
                 logo: data.logo,
-                email: data.companyEmail || data.email, // Fallback if company email not separate
+                email: data.companyEmail || data.email,
                 address: data.companyAddress,
                 city: data.city,
                 postalCode: data.postalCode,

@@ -3,44 +3,12 @@ import { CheckInDto, CheckOutDto, CreateAttendanceDto, BulkCheckInDto } from './
 export declare class AttendanceController {
     private readonly attendanceService;
     constructor(attendanceService: AttendanceService);
-    checkIn(checkInDto: CheckInDto): Promise<{
-        data: import("./attendance.entity").Attendance;
-        statusCode: number;
-        message: string;
-    }>;
-    bulkCheckIn(bulkCheckInDto: BulkCheckInDto): Promise<{
-        data: any;
-        statusCode: number;
-        message: string;
-    }>;
-    checkOut(checkOutDto: CheckOutDto): Promise<{
-        data: import("./attendance.entity").Attendance;
-        statusCode: number;
-        message: string;
-    }>;
-    create(createAttendanceDto: CreateAttendanceDto): Promise<{
-        data: import("./attendance.entity").Attendance;
-        statusCode: number;
-        message: string;
-    }>;
-    findAll(query: any): Promise<{
-        data: import("./attendance.entity").Attendance[];
-        statusCode: number;
-        message: string;
-    }>;
-    getTodayAttendance(employeeId: string): Promise<{
-        data: import("./attendance.entity").Attendance | null;
-        statusCode: number;
-        message: string;
-    }>;
-    getAnalytics(query: any): Promise<{
-        data: any;
-        statusCode: number;
-        message: string;
-    }>;
-    findOne(id: string): Promise<{
-        data: import("./attendance.entity").Attendance | null;
-        statusCode: number;
-        message: string;
-    }>;
+    checkIn(checkInDto: CheckInDto): Promise<import("./attendance.entity").Attendance>;
+    bulkCheckIn(bulkCheckInDto: BulkCheckInDto): Promise<any>;
+    checkOut(checkOutDto: CheckOutDto): Promise<import("./attendance.entity").Attendance>;
+    create(createAttendanceDto: CreateAttendanceDto): Promise<import("./attendance.entity").Attendance>;
+    findAll(query: any): Promise<import("./attendance.entity").Attendance[]>;
+    getTodayAttendance(employeeId: string): Promise<import("./attendance.entity").Attendance | null>;
+    getAnalytics(query: any): Promise<any>;
+    findOne(id: string): Promise<import("./attendance.entity").Attendance | null>;
 }

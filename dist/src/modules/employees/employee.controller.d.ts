@@ -4,6 +4,9 @@ export declare class EmployeeController {
     private readonly employeeService;
     constructor(employeeService: EmployeeService);
     create(createEmployeeDto: CreateEmployeeDto): Promise<import("./employee.entity").Employee>;
+    fixRoles(): Promise<{
+        message: string;
+    }>;
     getCount(companyId?: string): Promise<{
         count: number;
     }>;

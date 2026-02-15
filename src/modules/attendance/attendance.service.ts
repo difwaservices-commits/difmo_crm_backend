@@ -35,14 +35,18 @@ export class AttendanceService {
         return R * c; // in metres
     }
 
-    private getCurrentISTTime(): Date {
-        const now = new Date();
-        const istString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-        return new Date(istString);
+    private getISTDateString(): string {
+        return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    }
+
+    private getISTTimeParts() {
+        const istString = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+        const [hours, minutes, seconds] = istString.split(':').map(Number);
+        return { hours, minutes, seconds, timeString: istString };
     }
 
     async checkIn(checkInDto: CheckInDto): Promise<Attendance> {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getISTDateString();
 
         // 1. Check for Leave
         const isOnLeave = await this.leavesService.isEmployeeOnLeave(checkInDto.employeeId, today);
@@ -66,17 +70,15 @@ export class AttendanceService {
         // 3. Time Constraints based on Company Settings
         const employee = await this.employeeService.findOne(checkInDto.employeeId);
         if (employee && employee.company && employee.company.openingTime) {
-            const now = this.getCurrentISTTime();
+            const ist = this.getISTTimeParts();
             const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
-            const openTime = new Date(now);
-            openTime.setHours(openHour, openMinute, 0, 0);
 
             // Allow check-in 1 hour before opening time
-            const earliestCheckIn = new Date(openTime);
-            earliestCheckIn.setHours(openHour - 1);
+            const earliestHour = openHour - 1;
 
-            if (now < earliestCheckIn) {
-                throw new ForbiddenException(`Cannot check in before ${earliestCheckIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`);
+            if (ist.hours < earliestHour) {
+                const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
+                throw new ForbiddenException(`Cannot check in before ${earliestStr} AM.`);
             }
         }
 
@@ -92,22 +94,22 @@ export class AttendanceService {
             throw new BadRequestException('Already checked in today');
         }
 
-        const now = this.getCurrentISTTime();
-        const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        const ist = this.getISTTimeParts();
+        const checkInTime = ist.timeString;
 
         // Determine status
         let status = 'present';
         if (employee && employee.company && employee.company.openingTime) {
             const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
             // Late if more than 15 mins after opening time
-            if (now.getHours() > openHour || (now.getHours() === openHour && now.getMinutes() > openMinute + 15)) {
+            if (ist.hours > openHour || (ist.hours === openHour && ist.minutes > openMinute + 15)) {
                 status = 'late';
             }
         } else {
             // Default logic if no company time set
             const startHour = 9;
             const startMinute = 0;
-            if (now.getHours() > startHour || (now.getHours() === startHour && now.getMinutes() > startMinute + 15)) {
+            if (ist.hours > startHour || (ist.hours === startHour && ist.minutes > startMinute + 15)) {
                 status = 'late';
             }
         }
@@ -168,8 +170,8 @@ export class AttendanceService {
             }
         }
 
-        const now = this.getCurrentISTTime();
-        const checkOutTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        const ist = this.getISTTimeParts();
+        const checkOutTime = ist.timeString;
 
         // Calculate work hours
         if (attendance.checkInTime) {
@@ -188,7 +190,7 @@ export class AttendanceService {
 
         // Early departure logic
         const endHour = 17;
-        if (now.getHours() < endHour) {
+        if (ist.hours < endHour) {
             if (attendance.status === 'present') {
                 attendance.status = 'early_departure';
             }
@@ -252,7 +254,7 @@ export class AttendanceService {
     }
 
     async getTodayAttendance(employeeId: string): Promise<Attendance | null> {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getISTDateString();
         return this.attendanceRepository.findOne({
             where: {
                 employeeId,
@@ -338,7 +340,7 @@ export class AttendanceService {
             GROUP BY status
         `.replace('$1', isPostgres ? '$1' : '?');
 
-        const distribution = await this.attendanceRepository.query(distributionSql, [today]);
+        const distribution = await this.attendanceRepository.query(distributionSql, [this.getISTDateString()]);
 
         // 3. 6-Month Punctuality Trend
         let punctualityTrendSql = '';

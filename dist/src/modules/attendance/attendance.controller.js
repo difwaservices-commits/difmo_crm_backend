@@ -23,68 +23,28 @@ let AttendanceController = class AttendanceController {
         this.attendanceService = attendanceService;
     }
     async checkIn(checkInDto) {
-        const attendance = await this.attendanceService.checkIn(checkInDto);
-        return {
-            data: attendance,
-            statusCode: 201,
-            message: 'Checked in successfully'
-        };
+        return this.attendanceService.checkIn(checkInDto);
     }
     async bulkCheckIn(bulkCheckInDto) {
-        const results = await this.attendanceService.bulkCheckIn(bulkCheckInDto.employeeIds, bulkCheckInDto.notes);
-        return {
-            data: results,
-            statusCode: 200,
-            message: 'Bulk check-in processed'
-        };
+        return this.attendanceService.bulkCheckIn(bulkCheckInDto.employeeIds, bulkCheckInDto.notes);
     }
     async checkOut(checkOutDto) {
-        const attendance = await this.attendanceService.checkOut(checkOutDto);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Checked out successfully'
-        };
+        return this.attendanceService.checkOut(checkOutDto);
     }
     async create(createAttendanceDto) {
-        const attendance = await this.attendanceService.create(createAttendanceDto);
-        return {
-            data: attendance,
-            statusCode: 201,
-            message: 'Attendance record created successfully'
-        };
+        return this.attendanceService.create(createAttendanceDto);
     }
     async findAll(query) {
-        const attendance = await this.attendanceService.findAll(query);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.findAll(query);
     }
     async getTodayAttendance(employeeId) {
-        const attendance = await this.attendanceService.getTodayAttendance(employeeId);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.getTodayAttendance(employeeId);
     }
     async getAnalytics(query) {
-        const analytics = await this.attendanceService.getAnalytics(query);
-        return {
-            data: analytics,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.getAnalytics(query);
     }
     async findOne(id) {
-        const attendance = await this.attendanceService.findOne(id);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.findOne(id);
     }
 };
 exports.AttendanceController = AttendanceController;

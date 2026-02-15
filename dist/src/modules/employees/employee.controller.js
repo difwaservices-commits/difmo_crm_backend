@@ -25,6 +25,9 @@ let EmployeeController = class EmployeeController {
     async create(createEmployeeDto) {
         return this.employeeService.create(createEmployeeDto);
     }
+    async fixRoles() {
+        return this.employeeService.fixEmployeeRoles();
+    }
     async getCount(companyId) {
         const count = await this.employeeService.count(companyId);
         return { count };
@@ -88,6 +91,12 @@ __decorate([
     __metadata("design:paramtypes", [employee_dto_1.CreateEmployeeDto]),
     __metadata("design:returntype", Promise)
 ], EmployeeController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('fix-roles'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], EmployeeController.prototype, "fixRoles", null);
 __decorate([
     (0, common_1.Get)('stats/count'),
     __param(0, (0, common_1.Query)('companyId')),

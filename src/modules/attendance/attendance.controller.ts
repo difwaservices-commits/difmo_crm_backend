@@ -10,81 +10,41 @@ export class AttendanceController {
 
     @Post('check-in')
     async checkIn(@Body() checkInDto: CheckInDto) {
-        const attendance = await this.attendanceService.checkIn(checkInDto);
-        return {
-            data: attendance,
-            statusCode: 201,
-            message: 'Checked in successfully'
-        };
+        return this.attendanceService.checkIn(checkInDto);
     }
 
     @Post('bulk-check-in')
     async bulkCheckIn(@Body() bulkCheckInDto: BulkCheckInDto) {
-        const results = await this.attendanceService.bulkCheckIn(bulkCheckInDto.employeeIds, bulkCheckInDto.notes);
-        return {
-            data: results,
-            statusCode: 200,
-            message: 'Bulk check-in processed'
-        };
+        return this.attendanceService.bulkCheckIn(bulkCheckInDto.employeeIds, bulkCheckInDto.notes);
     }
 
     @Post('check-out')
     async checkOut(@Body() checkOutDto: CheckOutDto) {
-        const attendance = await this.attendanceService.checkOut(checkOutDto);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Checked out successfully'
-        };
+        return this.attendanceService.checkOut(checkOutDto);
     }
 
     @Post()
     async create(@Body() createAttendanceDto: CreateAttendanceDto) {
-        const attendance = await this.attendanceService.create(createAttendanceDto);
-        return {
-            data: attendance,
-            statusCode: 201,
-            message: 'Attendance record created successfully'
-        };
+        return this.attendanceService.create(createAttendanceDto);
     }
 
     @Get()
     async findAll(@Query() query: any) {
-        const attendance = await this.attendanceService.findAll(query);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.findAll(query);
     }
 
     @Get('today/:employeeId')
     async getTodayAttendance(@Param('employeeId') employeeId: string) {
-        const attendance = await this.attendanceService.getTodayAttendance(employeeId);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.getTodayAttendance(employeeId);
     }
 
     @Get('analytics')
     async getAnalytics(@Query() query: any) {
-        const analytics = await this.attendanceService.getAnalytics(query);
-        return {
-            data: analytics,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.getAnalytics(query);
     }
 
     @Get(':id')
     async findOne(@Param('id') id: string) {
-        const attendance = await this.attendanceService.findOne(id);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.findOne(id);
     }
 }

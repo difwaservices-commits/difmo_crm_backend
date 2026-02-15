@@ -13,4 +13,7 @@ export declare class EmployeeService {
     update(id: string, updateEmployeeDto: UpdateEmployeeDto): Promise<Employee | null>;
     remove(id: string): Promise<void>;
     count(companyId?: string): Promise<number>;
+    fixEmployeeRoles(companyId?: string): Promise<{
+        message: string;
+    }>;
 }
