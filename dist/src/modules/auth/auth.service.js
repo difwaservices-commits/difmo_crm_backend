@@ -104,6 +104,7 @@ let AuthService = class AuthService {
                 companyId: company.id,
                 isActive: true
             });
+            console.log(company);
             return { company, user };
         }
         catch (error) {

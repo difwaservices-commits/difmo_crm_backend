@@ -54,6 +54,8 @@ export class AuthService {
                 enablePayroll: data.enablePayroll,
             });
 
+          
+
             // 2. Create Admin User
             const user = await this.userService.create({
                 email: data.email,
@@ -64,7 +66,7 @@ export class AuthService {
                 companyId: company.id,
                 isActive: true
             });
-
+              console.log(company);
             return { company, user };
         } catch (error) {
             console.error('Registration Error:', error);
