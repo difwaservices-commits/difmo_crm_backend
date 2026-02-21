@@ -33,23 +33,28 @@ let AttendanceService = class AttendanceService {
     }
     calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
-        const φ1 = lat1 * Math.PI / 180;
-        const φ2 = lat2 * Math.PI / 180;
-        const Δφ = (lat2 - lat1) * Math.PI / 180;
-        const Δλ = (lon2 - lon1) * Math.PI / 180;
+        const φ1 = (lat1 * Math.PI) / 180;
+        const φ2 = (lat2 * Math.PI) / 180;
+        const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+        const Δλ = ((lon2 - lon1) * Math.PI) / 180;
         const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
-    getCurrentISTTime() {
-        const now = new Date();
-        const istString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-        return new Date(istString);
+    getISTDateString() {
+        return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    }
+    getISTTimeParts() {
+        const istString = new Date().toLocaleTimeString('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            hour12: false,
+        });
+        const [hours, minutes, seconds] = istString.split(':').map(Number);
+        return { hours, minutes, seconds, timeString: istString };
     }
     async checkIn(checkInDto) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getISTDateString();
         const isOnLeave = await this.leavesService.isEmployeeOnLeave(checkInDto.employeeId, today);
         if (isOnLeave) {
             throw new common_1.BadRequestException('Cannot check in: Employee is on approved leave today.');
@@ -62,14 +67,14 @@ let AttendanceService = class AttendanceService {
         }
         const employee = await this.employeeService.findOne(checkInDto.employeeId);
         if (employee && employee.company && employee.company.openingTime) {
-            const now = this.getCurrentISTTime();
-            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
-            const openTime = new Date(now);
-            openTime.setHours(openHour, openMinute, 0, 0);
-            const earliestCheckIn = new Date(openTime);
-            earliestCheckIn.setHours(openHour - 1);
-            if (now < earliestCheckIn) {
-                throw new common_1.ForbiddenException(`Cannot check in before ${earliestCheckIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`);
+            const ist = this.getISTTimeParts();
+            const [openHour, openMinute] = employee.company.openingTime
+                .split(':')
+                .map(Number);
+            const earliestHour = openHour - 1;
+            if (ist.hours < earliestHour) {
+                const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
+                throw new common_1.ForbiddenException(`Cannot check in before ${earliestStr} AM.`);
             }
         }
         const existing = await this.attendanceRepository.findOne({
@@ -81,19 +86,23 @@ let AttendanceService = class AttendanceService {
         if (existing) {
             throw new common_1.BadRequestException('Already checked in today');
         }
-        const now = this.getCurrentISTTime();
-        const checkInTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        const ist = this.getISTTimeParts();
+        const checkInTime = ist.timeString;
         let status = 'present';
         if (employee && employee.company && employee.company.openingTime) {
-            const [openHour, openMinute] = employee.company.openingTime.split(':').map(Number);
-            if (now.getHours() > openHour || (now.getHours() === openHour && now.getMinutes() > openMinute + 15)) {
+            const [openHour, openMinute] = employee.company.openingTime
+                .split(':')
+                .map(Number);
+            if (ist.hours > openHour ||
+                (ist.hours === openHour && ist.minutes > openMinute + 15)) {
                 status = 'late';
             }
         }
         else {
             const startHour = 9;
             const startMinute = 0;
-            if (now.getHours() > startHour || (now.getHours() === startHour && now.getMinutes() > startMinute + 15)) {
+            if (ist.hours > startHour ||
+                (ist.hours === startHour && ist.minutes > startMinute + 15)) {
                 status = 'late';
             }
         }
@@ -110,7 +119,7 @@ let AttendanceService = class AttendanceService {
     async bulkCheckIn(employeeIds, notes) {
         const results = {
             success: [],
-            failed: []
+            failed: [],
         };
         for (const employeeId of employeeIds) {
             try {
@@ -139,20 +148,21 @@ let AttendanceService = class AttendanceService {
                 throw new common_1.ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check out.`);
             }
         }
-        const now = this.getCurrentISTTime();
-        const checkOutTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        const ist = this.getISTTimeParts();
+        const checkOutTime = ist.timeString;
         if (attendance.checkInTime) {
             const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);
             const checkOut = new Date(`2000-01-01 ${checkOutTime}`);
             const workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
             attendance.workHours = Math.round(workHours * 100) / 100;
             if (attendance.workHours > 8) {
-                attendance.overtime = Math.round((attendance.workHours - 8) * 100) / 100;
+                attendance.overtime =
+                    Math.round((attendance.workHours - 8) * 100) / 100;
             }
         }
         attendance.checkOutTime = checkOutTime;
         const endHour = 17;
-        if (now.getHours() < endHour) {
+        if (ist.hours < endHour) {
             if (attendance.status === 'present') {
                 attendance.status = 'early_departure';
             }
@@ -173,15 +183,20 @@ let AttendanceService = class AttendanceService {
         return this.attendanceRepository.save(attendance);
     }
     async findAll(filters) {
-        const query = this.attendanceRepository.createQueryBuilder('attendance')
+        const query = this.attendanceRepository
+            .createQueryBuilder('attendance')
             .leftJoinAndSelect('attendance.employee', 'employee')
             .leftJoinAndSelect('employee.user', 'user')
             .leftJoinAndSelect('employee.company', 'company');
         if (filters?.companyId) {
-            query.andWhere('employee.companyId = :companyId', { companyId: filters.companyId });
+            query.andWhere('employee.companyId = :companyId', {
+                companyId: filters.companyId,
+            });
         }
         if (filters?.employeeId) {
-            query.andWhere('attendance.employeeId = :employeeId', { employeeId: filters.employeeId });
+            query.andWhere('attendance.employeeId = :employeeId', {
+                employeeId: filters.employeeId,
+            });
         }
         if (filters?.startDate && filters?.endDate) {
             query.andWhere('attendance.date BETWEEN :startDate AND :endDate', {
@@ -202,7 +217,7 @@ let AttendanceService = class AttendanceService {
         });
     }
     async getTodayAttendance(employeeId) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getISTDateString();
         return this.attendanceRepository.findOne({
             where: {
                 employeeId,
@@ -219,12 +234,23 @@ let AttendanceService = class AttendanceService {
             });
         }
         if (filters?.employeeId) {
-            query.andWhere('attendance.employeeId = :employeeId', { employeeId: filters.employeeId });
+            query.andWhere('attendance.employeeId = :employeeId', {
+                employeeId: filters.employeeId,
+            });
         }
         const total = await query.getCount();
-        const present = await query.clone().andWhere('attendance.status = :status', { status: 'present' }).getCount();
-        const absent = await query.clone().andWhere('attendance.status = :status', { status: 'absent' }).getCount();
-        const late = await query.clone().andWhere('attendance.status = :status', { status: 'late' }).getCount();
+        const present = await query
+            .clone()
+            .andWhere('attendance.status = :status', { status: 'present' })
+            .getCount();
+        const absent = await query
+            .clone()
+            .andWhere('attendance.status = :status', { status: 'absent' })
+            .getCount();
+        const late = await query
+            .clone()
+            .andWhere('attendance.status = :status', { status: 'late' })
+            .getCount();
         const avgWorkHours = await query
             .select('AVG(attendance.workHours)', 'avg')
             .getRawOne();
@@ -274,7 +300,7 @@ let AttendanceService = class AttendanceService {
             WHERE date = $1
             GROUP BY status
         `.replace('$1', isPostgres ? '$1' : '?');
-        const distribution = await this.attendanceRepository.query(distributionSql, [today]);
+        const distribution = await this.attendanceRepository.query(distributionSql, [this.getISTDateString()]);
         let punctualityTrendSql = '';
         if (isPostgres) {
             punctualityTrendSql = `
@@ -326,7 +352,7 @@ let AttendanceService = class AttendanceService {
             averageWorkHours: avgWorkHours?.avg || 0,
             weeklyTrend,
             distribution,
-            punctualityTrend
+            punctualityTrend,
         };
     }
 };

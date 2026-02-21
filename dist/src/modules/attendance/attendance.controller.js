@@ -17,79 +17,43 @@ const common_1 = require("@nestjs/common");
 const attendance_service_1 = require("./attendance.service");
 const attendance_dto_1 = require("./dto/attendance.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const ability_factory_1 = require("../access-control/ability.factory");
+const abilities_decorator_1 = require("../access-control/abilities.decorator");
+const abilities_guard_1 = require("../access-control/abilities.guard");
 let AttendanceController = class AttendanceController {
     attendanceService;
     constructor(attendanceService) {
         this.attendanceService = attendanceService;
     }
     async checkIn(checkInDto) {
-        const attendance = await this.attendanceService.checkIn(checkInDto);
-        return {
-            data: attendance,
-            statusCode: 201,
-            message: 'Checked in successfully'
-        };
+        return this.attendanceService.checkIn(checkInDto);
     }
     async bulkCheckIn(bulkCheckInDto) {
-        const results = await this.attendanceService.bulkCheckIn(bulkCheckInDto.employeeIds, bulkCheckInDto.notes);
-        return {
-            data: results,
-            statusCode: 200,
-            message: 'Bulk check-in processed'
-        };
+        return this.attendanceService.bulkCheckIn(bulkCheckInDto.employeeIds, bulkCheckInDto.notes);
     }
     async checkOut(checkOutDto) {
-        const attendance = await this.attendanceService.checkOut(checkOutDto);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Checked out successfully'
-        };
+        return this.attendanceService.checkOut(checkOutDto);
     }
     async create(createAttendanceDto) {
-        const attendance = await this.attendanceService.create(createAttendanceDto);
-        return {
-            data: attendance,
-            statusCode: 201,
-            message: 'Attendance record created successfully'
-        };
+        return this.attendanceService.create(createAttendanceDto);
     }
     async findAll(query) {
-        const attendance = await this.attendanceService.findAll(query);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.findAll(query);
     }
     async getTodayAttendance(employeeId) {
-        const attendance = await this.attendanceService.getTodayAttendance(employeeId);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.getTodayAttendance(employeeId);
     }
     async getAnalytics(query) {
-        const analytics = await this.attendanceService.getAnalytics(query);
-        return {
-            data: analytics,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.getAnalytics(query);
     }
     async findOne(id) {
-        const attendance = await this.attendanceService.findOne(id);
-        return {
-            data: attendance,
-            statusCode: 200,
-            message: 'Success'
-        };
+        return this.attendanceService.findOne(id);
     }
 };
 exports.AttendanceController = AttendanceController;
 __decorate([
     (0, common_1.Post)('check-in'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Create, subject: 'attendance' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [attendance_dto_1.CheckInDto]),
@@ -97,6 +61,7 @@ __decorate([
 ], AttendanceController.prototype, "checkIn", null);
 __decorate([
     (0, common_1.Post)('bulk-check-in'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Create, subject: 'attendance' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [attendance_dto_1.BulkCheckInDto]),
@@ -104,6 +69,7 @@ __decorate([
 ], AttendanceController.prototype, "bulkCheckIn", null);
 __decorate([
     (0, common_1.Post)('check-out'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Update, subject: 'attendance' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [attendance_dto_1.CheckOutDto]),
@@ -111,6 +77,7 @@ __decorate([
 ], AttendanceController.prototype, "checkOut", null);
 __decorate([
     (0, common_1.Post)(),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Create, subject: 'attendance' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [attendance_dto_1.CreateAttendanceDto]),
@@ -118,6 +85,7 @@ __decorate([
 ], AttendanceController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Read, subject: 'attendance' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -125,6 +93,7 @@ __decorate([
 ], AttendanceController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('today/:employeeId'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Read, subject: 'attendance' }),
     __param(0, (0, common_1.Param)('employeeId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -132,6 +101,7 @@ __decorate([
 ], AttendanceController.prototype, "getTodayAttendance", null);
 __decorate([
     (0, common_1.Get)('analytics'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Read, subject: 'attendance' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -139,6 +109,7 @@ __decorate([
 ], AttendanceController.prototype, "getAnalytics", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Read, subject: 'attendance' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -146,7 +117,7 @@ __decorate([
 ], AttendanceController.prototype, "findOne", null);
 exports.AttendanceController = AttendanceController = __decorate([
     (0, common_1.Controller)('attendance'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, abilities_guard_1.AbilitiesGuard),
     __metadata("design:paramtypes", [attendance_service_1.AttendanceService])
 ], AttendanceController);
 //# sourceMappingURL=attendance.controller.js.map

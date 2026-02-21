@@ -9,6 +9,20 @@ paths:
           description: ""
       tags:
         - App
+  /dashboard/metrics:
+    get:
+      operationId: DashboardController_getMetrics
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags:
+        - Dashboard
   /auth/login:
     post:
       operationId: AuthController_login
@@ -29,6 +43,13 @@ paths:
   /auth/profile:
     get:
       operationId: AuthController_getProfile
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+    patch:
+      operationId: AuthController_updateProfile
       parameters: []
       responses:
         "200":
@@ -158,6 +179,75 @@ paths:
         "200":
           description: ""
       tags: *a3
+  /access-control/roles:
+    get:
+      operationId: AccessControlController_findAllRoles
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: &a4
+        - AccessControl
+    post:
+      operationId: AccessControlController_createRole
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a4
+  /access-control/roles/{id}:
+    get:
+      operationId: AccessControlController_findOneRole
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a4
+    put:
+      operationId: AccessControlController_updateRole
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a4
+  /access-control/permissions:
+    get:
+      operationId: AccessControlController_findAllPermissions
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a4
+    post:
+      operationId: AccessControlController_createPermission
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a4
+  /access-control/seed:
+    post:
+      operationId: AccessControlController_seed
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a4
   /employees:
     post:
       operationId: EmployeeController_create
@@ -171,7 +261,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a4
+      tags: &a5
         - Employee
     get:
       operationId: EmployeeController_findAll
@@ -179,7 +269,15 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
+  /employees/fix-roles:
+    post:
+      operationId: EmployeeController_fixRoles
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a5
   /employees/stats/count:
     get:
       operationId: EmployeeController_getCount
@@ -192,7 +290,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
   /employees/{id}:
     get:
       operationId: EmployeeController_findOne
@@ -205,7 +303,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
     put:
       operationId: EmployeeController_update
       parameters:
@@ -223,7 +321,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
     delete:
       operationId: EmployeeController_remove
       parameters:
@@ -235,7 +333,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a5
   /attendance/check-in:
     post:
       operationId: AttendanceController_checkIn
@@ -249,7 +347,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a5
+      tags: &a6
         - Attendance
   /attendance/bulk-check-in:
     post:
@@ -264,7 +362,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a5
+      tags: *a6
   /attendance/check-out:
     post:
       operationId: AttendanceController_checkOut
@@ -278,7 +376,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a5
+      tags: *a6
   /attendance:
     post:
       operationId: AttendanceController_create
@@ -292,14 +390,14 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a5
+      tags: *a6
     get:
       operationId: AttendanceController_findAll
       parameters: []
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a6
   /attendance/today/{employeeId}:
     get:
       operationId: AttendanceController_getTodayAttendance
@@ -312,7 +410,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a6
   /attendance/analytics:
     get:
       operationId: AttendanceController_getAnalytics
@@ -320,7 +418,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a6
   /attendance/{id}:
     get:
       operationId: AttendanceController_findOne
@@ -333,7 +431,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a6
   /leaves:
     post:
       operationId: LeavesController_create
@@ -347,7 +445,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a6
+      tags: &a7
         - Leaves
     get:
       operationId: LeavesController_findAll
@@ -355,7 +453,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a6
+      tags: *a7
   /leaves/{id}:
     get:
       operationId: LeavesController_findOne
@@ -368,7 +466,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a6
+      tags: *a7
   /leaves/{id}/status:
     patch:
       operationId: LeavesController_updateStatus
@@ -387,7 +485,304 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a6
+      tags: *a7
+  /designations:
+    post:
+      operationId: DesignationController_create
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: &a8
+        - Designation
+    get:
+      operationId: DesignationController_findAll
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+  /designations/{id}:
+    get:
+      operationId: DesignationController_findOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+    put:
+      operationId: DesignationController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+    delete:
+      operationId: DesignationController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+  /projects/clients:
+    post:
+      operationId: ProjectsController_createClient
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: &a9
+        - Projects
+    get:
+      operationId: ProjectsController_findAllClients
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a9
+  /projects:
+    post:
+      operationId: ProjectsController_createProject
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a9
+    get:
+      operationId: ProjectsController_findAllProjects
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a9
+  /projects/tasks:
+    post:
+      operationId: ProjectsController_createTask
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a9
+    get:
+      operationId: ProjectsController_findAllTasks
+      parameters:
+        - name: projectId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a9
+  /projects/tasks/company:
+    get:
+      operationId: ProjectsController_findAllTasksByCompany
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a9
+  /projects/tasks/{id}:
+    put:
+      operationId: ProjectsController_updateTask
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a9
+  /finance/payroll:
+    post:
+      operationId: FinanceController_createPayroll
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: &a10
+        - Finance
+    get:
+      operationId: FinanceController_findAllPayroll
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: month
+          required: true
+          in: query
+          schema:
+            type: number
+        - name: year
+          required: true
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+      tags: *a10
+  /finance/expenses:
+    post:
+      operationId: FinanceController_createExpense
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a10
+    get:
+      operationId: FinanceController_findAllExpenses
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a10
+  /finance/summary:
+    get:
+      operationId: FinanceController_getSummary
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a10
+  /time-tracking/start:
+    post:
+      operationId: TimeTrackingController_start
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: &a11
+        - TimeTracking
+  /time-tracking/stop/{id}:
+    put:
+      operationId: TimeTrackingController_stop
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a11
+  /time-tracking:
+    get:
+      operationId: TimeTrackingController_findAll
+      parameters:
+        - name: employeeId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a11
+  /add-projects:
+    post:
+      operationId: ProjectController_create
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: &a12
+        - Project
+    get:
+      operationId: ProjectController_findAll
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a12
+  /add-projects/{id}:
+    get:
+      operationId: ProjectController_findOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a12
+    put:
+      operationId: ProjectController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a12
+    delete:
+      operationId: ProjectController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a12
 info:
   title: Difmo CRM API
   description: The Difmo CRM API description

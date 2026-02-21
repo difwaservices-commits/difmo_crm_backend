@@ -19,6 +19,23 @@ import { Employee } from './modules/employees/employee.entity';
 import { Attendance } from './modules/attendance/attendance.entity';
 import { LeavesModule } from './modules/leaves/leaves.module';
 import { Leave } from './modules/leaves/leave.entity';
+import { DesignationModule } from './modules/designations/designation.module';
+import { Designation } from './modules/designations/designation.entity';
+import { Client } from './modules/projects/entities/client.entity';
+import { Project } from './modules/projects/entities/project.entity';
+import { Task } from './modules/projects/entities/task.entity';
+import { Payroll } from './modules/finance/entities/payroll.entity';
+import { Expense } from './modules/finance/entities/expense.entity';
+import { AuditLog } from './modules/audit-logs/audit-log.entity';
+import { TimeEntry } from './modules/time-tracking/time-entry.entity';
+import { MailModule } from './modules/mail/mail.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { FinanceModule } from './modules/finance/finance.module';
+import { AuditLogModule } from './modules/audit-logs/audit-log.module';
+import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module';
+import { DashboardController } from './modules/dashboard/dashboard.controller';
+import { AllProject } from './modules/project/project.entity';
+import { AllProjectModule } from './modules/project/project.module';
 
 @Module({
   imports: [
@@ -29,13 +46,36 @@ import { Leave } from './modules/leaves/leave.entity';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const dbUrl = configService.get<string>('DATABASE_URL');
-        console.log('DATABASE_URL:', dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set');
+        console.log(
+          'DATABASE_URL:',
+          dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set',
+        );
+        const entities = [
+          Company,
+          User,
+          Department,
+          Role,
+          Permission,
+          Employee,
+          Attendance,
+          Leave,
+          Designation,
+          Client,
+          Project,
+          Task,
+          Payroll,
+          Expense,
+          AuditLog,
+          TimeEntry,
+          AllProject
+
+        ];
         if (dbUrl) {
           return {
             type: 'postgres',
             url: dbUrl,
-            entities: [Company, User, Department, Role, Permission, Employee, Attendance, Leave],
-            synchronize: true, // Note: In production, migrations are preferred over synchronize: true
+            entities,
+            synchronize: true,
             ssl: {
               rejectUnauthorized: false,
             },
@@ -45,7 +85,7 @@ import { Leave } from './modules/leaves/leave.entity';
         return {
           type: 'sqlite',
           database: 'db.sqlite',
-          entities: [Company, User, Department, Role, Permission, Employee, Attendance, Leave],
+          entities,
           synchronize: true,
         };
       },
@@ -59,8 +99,18 @@ import { Leave } from './modules/leaves/leave.entity';
     EmployeeModule,
     AttendanceModule,
     LeavesModule,
+    DesignationModule,
+    MailModule,
+    ProjectsModule,
+    FinanceModule,
+    AuditLogModule,
+    TimeTrackingModule,
+    ProjectsModule,
+    AllProjectModule
+
+
   ],
-  controllers: [AppController],
+  controllers: [AppController, DashboardController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

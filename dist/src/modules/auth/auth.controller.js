@@ -25,22 +25,20 @@ let AuthController = class AuthController {
         this.userService = userService;
     }
     async login(req) {
-        console.log('Login attempt for:', req.email);
         const user = await this.authService.validateUser(req.email, req.password);
         if (!user) {
-            console.log('Invalid credentials for:', req.email);
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
-        console.log('User validated, generating token for:', user.id);
-        const result = await this.authService.login(user);
-        console.log('Login result:', JSON.stringify(result));
-        return result;
+        return this.authService.login(user);
     }
     async register(body) {
         return this.authService.register(body);
     }
     async getProfile(req) {
         return this.userService.findById(req.user.userId);
+    }
+    async updateProfile(req, body) {
+        return this.userService.updateProfile(req.user.userId, body);
     }
 };
 exports.AuthController = AuthController;
@@ -66,6 +64,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('profile'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "updateProfile", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService,

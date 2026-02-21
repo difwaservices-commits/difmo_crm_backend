@@ -1,36 +1,44 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Employee } from '../employees/employee.entity';
 
 @Entity()
 export class Leave {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => Employee)
-    @JoinColumn()
-    employee: Employee;
+  @ManyToOne(() => Employee)
+  @JoinColumn()
+  employee: Employee;
 
-    @Column()
-    employeeId: string;
+  @Column()
+  employeeId: string;
 
-    @Column({ type: 'date' })
-    startDate: string;
+  @Column({ type: 'date' })
+  startDate: string;
 
-    @Column({ type: 'date' })
-    endDate: string;
+  @Column({ type: 'date' })
+  endDate: string;
 
-    @Column()
-    reason: string;
+  @Column()
+  reason: string;
 
-    @Column({ default: 'pending' }) // pending, approved, rejected
-    status: string;
+  @Column({ default: 'pending' }) // pending, approved, rejected
+  status: string;
 
-    @Column()
-    type: string; // sick, casual, earned, etc.
+  @Column()
+  type: string; // sick, casual, earned, etc.
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

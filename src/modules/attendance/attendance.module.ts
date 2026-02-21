@@ -8,10 +8,17 @@ import { LeavesModule } from '../leaves/leaves.module';
 
 import { EmployeeModule } from '../employees/employee.module';
 
+import { AccessControlModule } from '../access-control/access-control.module';
+
 @Module({
-    imports: [TypeOrmModule.forFeature([Attendance]), LeavesModule, EmployeeModule],
-    controllers: [AttendanceController],
-    providers: [AttendanceService],
-    exports: [AttendanceService],
+  imports: [
+    TypeOrmModule.forFeature([Attendance]),
+    LeavesModule,
+    EmployeeModule,
+    AccessControlModule,
+  ],
+  controllers: [AttendanceController],
+  providers: [AttendanceService],
+  exports: [AttendanceService],
 })
-export class AttendanceModule { }
+export class AttendanceModule {}

@@ -12,7 +12,8 @@ export declare class AttendanceService {
     private readonly MAX_DISTANCE_METERS;
     constructor(attendanceRepository: Repository<Attendance>, leavesService: LeavesService, employeeService: EmployeeService);
     private calculateDistance;
-    private getCurrentISTTime;
+    private getISTDateString;
+    private getISTTimeParts;
     checkIn(checkInDto: CheckInDto): Promise<Attendance>;
     bulkCheckIn(employeeIds: string[], notes?: string): Promise<any>;
     checkOut(checkOutDto: CheckOutDto): Promise<Attendance>;
