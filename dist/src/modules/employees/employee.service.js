@@ -98,6 +98,7 @@ let EmployeeService = class EmployeeService {
         console.log('[EmployeeService] findAll called with filters:', JSON.stringify(filters));
         const query = this.employeeRepository
             .createQueryBuilder('employee')
+            .where('employee.isDeleted = :isDeleted', { isDeleted: false })
             .leftJoinAndSelect('employee.user', 'user')
             .leftJoinAndSelect('user.roles', 'roles')
             .leftJoinAndSelect('employee.company', 'company')
@@ -188,7 +189,20 @@ let EmployeeService = class EmployeeService {
         }
     }
     async remove(id) {
-        await this.employeeRepository.delete(id);
+        try {
+            const employee = await this.employeeRepository.findOne({
+                where: { id, isDeleted: false },
+            });
+            if (!employee) {
+                throw new Error('Employee not found');
+            }
+            await this.employeeRepository.update(id, { isDeleted: true });
+            console.log(`[EmployeeService] Employee ${id} soft-deleted`);
+        }
+        catch (error) {
+            console.error('[EmployeeService] Failed to delete employee:', error);
+            throw error;
+        }
     }
     async count(companyId) {
         const query = this.employeeRepository.createQueryBuilder('employee');

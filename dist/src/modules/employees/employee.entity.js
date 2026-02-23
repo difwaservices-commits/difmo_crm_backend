@@ -37,6 +37,7 @@ let Employee = class Employee {
     emergencyContact;
     emergencyPhone;
     skills;
+    isDeleted;
     createdAt;
     updatedAt;
 };
@@ -128,6 +129,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'simple-array', nullable: true }),
     __metadata("design:type", Array)
 ], Employee.prototype, "skills", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Employee.prototype, "isDeleted", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

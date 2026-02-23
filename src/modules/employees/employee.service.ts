@@ -18,7 +18,7 @@ export class EmployeeService {
     private companyRepository: Repository<Company>,
     private userService: UserService,
     private mailerService: MailerService,
-  ) {}
+  ) { }
 
   async create(
     createEmployeeDto: CreateEmployeeDto & { roleIds?: string[] },
@@ -105,15 +105,24 @@ export class EmployeeService {
       JSON.stringify(filters),
     );
 
+    // const query = this.employeeRepository
+    //   .createQueryBuilder('employee')
+    //   .leftJoinAndSelect('employee.user', 'user')
+    //   .leftJoinAndSelect('user.roles', 'roles')
+    //   .leftJoinAndSelect('employee.company', 'company')
+    //   .leftJoinAndSelect('employee.department', 'department')
+    //   .leftJoinAndSelect('employee.designation', 'designation');
+
+    // ... rest of filters
+
     const query = this.employeeRepository
       .createQueryBuilder('employee')
+      .where('employee.isDeleted = :isDeleted', { isDeleted: false })
       .leftJoinAndSelect('employee.user', 'user')
       .leftJoinAndSelect('user.roles', 'roles')
       .leftJoinAndSelect('employee.company', 'company')
       .leftJoinAndSelect('employee.department', 'department')
       .leftJoinAndSelect('employee.designation', 'designation');
-
-    // ... rest of filters
 
     if (filters?.companyId) {
       console.log(
@@ -241,8 +250,57 @@ export class EmployeeService {
     }
   }
 
+  // async remove(id: string): Promise<void> {
+  //   await this.employeeRepository.delete(id);
+  // }
+
+  // async remove(id: string): Promise<void> {
+  //   try {
+  //     const employee = await this.findOne(id);
+  //     if (!employee) throw new Error('Employee not found');
+  //      await this.employeeRepository.update(id, { isDeleted: true });
+
+  //     console.log(`[EmployeeService] Employee ${id} soft-deleted`);
+  //   } catch (error) {
+  //     console.error('[EmployeeService] Failed to delete employee:', error);
+  //     throw new Error('Failed to delete employee. Check related user/constraints.');
+  //   }
+  // }
+
+  // async remove(id: string): Promise<void> {
+  // try {
+  //   const employee = await this.employeeRepository.findOne({
+  //     where: { id, isDeleted: false },
+  //   });
+
+  //   if (!employee) throw new Error('Employee not found');
+
+  //   await this.employeeRepository.update(id, { isDeleted: true });
+  //   console.log(`[EmployeeService] Employee ${id} soft-deleted`);
+  // } catch (error) {
+  //   console.error('[EmployeeService] Failed to delete employee:', error);
+  //   throw new Error('Failed to delete employee. Check backend logs.');
+  // }
+  // }
+
   async remove(id: string): Promise<void> {
-    await this.employeeRepository.delete(id);
+    try {
+      // Employee ko fetch karo without relations (safe)
+      const employee = await this.employeeRepository.findOne({
+        where: { id, isDeleted: false },
+      });
+
+      if (!employee) {
+        throw new Error('Employee not found');
+      }
+
+      // Soft delete
+      await this.employeeRepository.update(id, { isDeleted: true });
+      console.log(`[EmployeeService] Employee ${id} soft-deleted`);
+    } catch (error) {
+      console.error('[EmployeeService] Failed to delete employee:', error);
+      throw error; // <-- ye line add karni hai
+    }
   }
 
   async count(companyId?: string): Promise<number> {

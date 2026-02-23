@@ -25,7 +25,7 @@ export class Employee {
   userId: string;
 
   @Column({ unique: true, nullable: true })
-  employeeCode: string; // e.g., DIF0001
+  employeeCode: string;
 
   @ManyToOne(() => Company, (company) => company.users)
   company: Company;
@@ -63,10 +63,10 @@ export class Employee {
   branch: string;
 
   @Column({ default: 'full-time' })
-  employmentType: string; // full-time, part-time, contract
+  employmentType: string;
 
   @Column({ default: 'active' })
-  status: string; // active, inactive, pending
+  status: string;
 
   @Column({ nullable: true })
   address: string;
@@ -79,6 +79,10 @@ export class Employee {
 
   @Column({ type: 'simple-array', nullable: true })
   skills: string[];
+
+  // ✅ Soft delete flag
+  @Column({ default: false })
+  isDeleted: boolean;
 
   @CreateDateColumn()
   createdAt: Date;
