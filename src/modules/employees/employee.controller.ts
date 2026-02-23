@@ -13,6 +13,11 @@ export class EmployeeController {
         return this.employeeService.create(createEmployeeDto);
     }
 
+    @Post('fix-roles')
+    async fixRoles() {
+        return this.employeeService.fixEmployeeRoles();
+    }
+
     @Get('stats/count')
     async getCount(@Query('companyId') companyId?: string) {
         const count = await this.employeeService.count(companyId);

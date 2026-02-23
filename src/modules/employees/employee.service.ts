@@ -17,20 +17,17 @@ export class EmployeeService {
     async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
         let userId = createEmployeeDto.userId;
 
-        // If no userId provided, create a new user
         if (!userId && createEmployeeDto.email) {
             console.log('[EmployeeService] Creating new user for employee:', createEmployeeDto.email);
 
-            // Check if user already exists
             const existingUser = await this.userService.findByEmail(createEmployeeDto.email);
             if (existingUser) {
                 console.log('[EmployeeService] User already exists, using existing userId:', existingUser.id);
                 userId = existingUser.id;
             } else {
-                // Create new user
                 const newUser = await this.userService.create({
                     email: createEmployeeDto.email,
-                    password: createEmployeeDto.password || 'Welcome123!', // Default password
+                    password: createEmployeeDto.password || 'Welcome123!',
                     firstName: createEmployeeDto.firstName,
                     lastName: createEmployeeDto.lastName,
                     phone: createEmployeeDto.phone,
@@ -44,6 +41,17 @@ export class EmployeeService {
 
         if (!userId) {
             throw new Error('User ID is required or sufficient details to create a user');
+        }
+
+        // Check if user exists and is Admin before assigning Employee role
+        const user = await this.userService.findById(userId);
+        const isAdmin = user?.roles?.some(r => ['Super Admin', 'Admin'].includes(r.name));
+
+        if (!isAdmin) {
+            // Ensure the user has the 'Employee' role only if not admin
+            await this.userService.assignRole(userId, 'Employee');
+        } else {
+            console.log(`[EmployeeService] Skipping Role assignment for user ${user?.email} as they are Admin/Super Admin`);
         }
 
         const employee = this.employeeRepository.create({
@@ -64,8 +72,11 @@ export class EmployeeService {
 
         const query = this.employeeRepository.createQueryBuilder('employee')
             .leftJoinAndSelect('employee.user', 'user')
+            //.leftJoinAndSelect('user.roles', 'roles') // Explicitly join roles if needed for filtering
             .leftJoinAndSelect('employee.company', 'company')
             .leftJoinAndSelect('employee.department', 'department');
+
+        // ... rest of filters
 
         if (filters?.companyId) {
             console.log('[EmployeeService] Filtering by companyId:', filters.companyId);
@@ -173,5 +184,34 @@ export class EmployeeService {
         }
 
         return query.getCount();
+    }
+
+    async fixEmployeeRoles(companyId?: string) {
+        console.log('[EmployeeService] Fixing employee roles...');
+        const employees = await this.findAll({}); // Get all
+        let count = 0;
+        let skipped = 0;
+
+        for (const employee of employees) {
+            if (employee.userId) {
+                try {
+                    // Check if user already has Admin/Super Admin role
+                    const user = await this.userService.findById(employee.userId);
+                    const isAdmin = user?.roles?.some(r => ['Super Admin', 'Admin'].includes(r.name));
+
+                    if (isAdmin) {
+                        console.log(`[EmployeeService] Skipping user ${user?.email} as they are Admin/Super Admin`);
+                        skipped++;
+                        continue;
+                    }
+
+                    await this.userService.assignRole(employee.userId, 'Employee');
+                    count++;
+                } catch (e) {
+                    console.error(`[EmployeeService] Failed to assign role to user ${employee.userId}:`, e);
+                }
+            }
+        }
+        return { message: `Fixed roles for ${count} employees. Skipped ${skipped} admins.` };
     }
 }
