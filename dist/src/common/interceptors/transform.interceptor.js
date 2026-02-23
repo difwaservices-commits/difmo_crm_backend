@@ -5,21 +5,38 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var TransformInterceptor_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransformInterceptor = void 0;
 const common_1 = require("@nestjs/common");
 const operators_1 = require("rxjs/operators");
-let TransformInterceptor = class TransformInterceptor {
+let TransformInterceptor = TransformInterceptor_1 = class TransformInterceptor {
+    logger = new common_1.Logger(TransformInterceptor_1.name);
     intercept(context, next) {
-        return next.handle().pipe((0, operators_1.map)((data) => ({
+        const ctx = context.switchToHttp();
+        const request = ctx.getRequest();
+        const response = ctx.getResponse();
+        const { method, originalUrl, body, params, query } = request;
+        const startTime = Date.now();
+        this.logger.log(`Incoming Request: ${method} ${originalUrl} 
+       Body: ${JSON.stringify(body)} 
+       Params: ${JSON.stringify(params)} 
+       Query: ${JSON.stringify(query)}`);
+        return next.handle().pipe((0, operators_1.tap)((data) => {
+            const responseTime = Date.now() - startTime;
+            this.logger.log(`Response: ${method} ${originalUrl} 
+           Status: ${response.statusCode} 
+           Time: ${responseTime}ms 
+           Data: ${JSON.stringify(data)}`);
+        }), (0, operators_1.map)((data) => ({
             data,
-            statusCode: context.switchToHttp().getResponse().statusCode,
+            statusCode: response.statusCode,
             message: 'Success',
         })));
     }
 };
 exports.TransformInterceptor = TransformInterceptor;
-exports.TransformInterceptor = TransformInterceptor = __decorate([
+exports.TransformInterceptor = TransformInterceptor = TransformInterceptor_1 = __decorate([
     (0, common_1.Injectable)()
 ], TransformInterceptor);
 //# sourceMappingURL=transform.interceptor.js.map

@@ -19,17 +19,14 @@ let PermissionsGuard = class PermissionsGuard {
         this.reflector = reflector;
     }
     canActivate(context) {
-        const requiredPermissions = this.reflector.getAllAndOverride(permissions_decorator_1.PERMISSIONS_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
+        const requiredPermissions = this.reflector.getAllAndOverride(permissions_decorator_1.PERMISSIONS_KEY, [context.getHandler(), context.getClass()]);
         if (!requiredPermissions) {
             return true;
         }
         const { user } = context.switchToHttp().getRequest();
         if (!user || !user.roles)
             return false;
-        const userPermissions = user.roles.flatMap(role => role.permissions.map(p => p.action + ':' + p.resource));
+        const userPermissions = user.roles.flatMap((role) => role.permissions.map((p) => p.action + ':' + p.resource));
         return requiredPermissions.some((permission) => userPermissions.includes(permission));
     }
 };

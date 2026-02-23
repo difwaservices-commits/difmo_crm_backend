@@ -1,6 +1,7 @@
 import { User } from '../users/user.entity';
 import { Company } from '../companies/company.entity';
 import { Department } from '../departments/department.entity';
+import { Designation } from '../designations/designation.entity';
 export declare class Employee {
     id: string;
     user: User;
@@ -10,6 +11,8 @@ export declare class Employee {
     companyId: string;
     department: Department;
     departmentId: string;
+    designation: Designation;
+    designationId: string;
     role: string;
     hireDate: Date;
     salary: string;

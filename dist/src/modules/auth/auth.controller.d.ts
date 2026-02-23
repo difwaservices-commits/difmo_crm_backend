@@ -13,4 +13,5 @@ export declare class AuthController {
         user: import("../users/user.entity").User;
     }>;
     getProfile(req: any): Promise<import("../users/user.entity").User | null>;
+    updateProfile(req: any, body: any): Promise<import("../users/user.entity").User>;
 }

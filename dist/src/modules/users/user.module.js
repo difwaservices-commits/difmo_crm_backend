@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const user_service_1 = require("./user.service");
 const user_entity_1 = require("./user.entity");
+const role_entity_1 = require("../access-control/role.entity");
 let UserModule = class UserModule {
 };
 exports.UserModule = UserModule;
 exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, role_entity_1.Role])],
         providers: [user_service_1.UserService],
         exports: [user_service_1.UserService],
     })

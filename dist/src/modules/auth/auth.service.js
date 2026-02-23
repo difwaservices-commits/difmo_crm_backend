@@ -66,7 +66,12 @@ let AuthService = class AuthService {
         return null;
     }
     async login(user) {
-        const payload = { username: user.email, sub: user.id, companyId: user.company?.id, roles: user.roles };
+        const payload = {
+            username: user.email,
+            sub: user.id,
+            companyId: user.company?.id,
+            roles: user.roles,
+        };
         return {
             access_token: this.jwtService.sign(payload),
             user: user,
@@ -102,9 +107,8 @@ let AuthService = class AuthService {
                 lastName: data.lastName,
                 phone: data.phone,
                 companyId: company.id,
-                isActive: true
+                isActive: true,
             });
-            console.log(company);
             return { company, user };
         }
         catch (error) {

@@ -50,11 +50,14 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./user.entity");
+const role_entity_1 = require("../access-control/role.entity");
 const bcrypt = __importStar(require("bcrypt"));
 let UserService = class UserService {
     userRepository;
-    constructor(userRepository) {
+    roleRepository;
+    constructor(userRepository, roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
     async create(createUserDto) {
         if (!createUserDto.password) {
@@ -66,26 +69,73 @@ let UserService = class UserService {
             ...userData,
             password: hashedPassword,
             company: companyId ? { id: companyId } : undefined,
+            isActive: true,
         });
-        return this.userRepository.save(user);
+        await this.userRepository.save(user);
+        return user;
     }
     async findByEmail(email) {
         return this.userRepository.findOne({
             where: { email },
-            relations: ['company', 'roles', 'roles.permissions']
+            relations: ['company', 'roles', 'roles.permissions'],
         });
     }
     async findById(id) {
         return this.userRepository.findOne({
             where: { id },
-            relations: ['company', 'roles', 'roles.permissions']
+            relations: ['company', 'roles', 'roles.permissions'],
         });
     }
-    async update(id, updateUserDto) {
-        await this.userRepository.update(id, updateUserDto);
+    async update(id, data) {
         const user = await this.findById(id);
-        if (!user) {
-            throw new Error(`User with ID ${id} not found`);
+        if (!user)
+            throw new Error('User not found');
+        Object.assign(user, data);
+        return this.userRepository.save(user);
+    }
+    async saveUser(user) {
+        return this.userRepository.save(user);
+    }
+    async updateProfile(userId, data) {
+        console.log("aerxtcyvubinim", data);
+        const user = await this.findById(userId);
+        if (!user)
+            throw new Error('User not found');
+        delete data.password;
+        delete data.roles;
+        delete data.company;
+        if (data.email && data.email !== user.email) {
+            const existing = await this.findByEmail(data.email);
+            if (existing)
+                throw new Error('Email already exists');
+        }
+        Object.assign(user, data);
+        return this.userRepository.save(user);
+    }
+    async findRolesByIds(ids) {
+        return this.roleRepository.find({ where: { id: (0, typeorm_2.In)(ids) } });
+    }
+    async assignRole(userId, roleName) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            relations: ['roles'],
+        });
+        if (!user)
+            throw new Error('User not found');
+        let role = await this.roleRepository.findOne({ where: { name: roleName } });
+        if (!role) {
+            role = this.roleRepository.create({
+                name: roleName,
+                description: `Default ${roleName} role`,
+            });
+            await this.roleRepository.save(role);
+        }
+        const hasRole = user.roles?.some((r) => r.id === role.id);
+        if (!hasRole) {
+            if (!user.roles)
+                user.roles = [];
+            user.roles.push(role);
+            await this.userRepository.save(user);
         }
         return user;
     }
@@ -94,6 +144,8 @@ exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(role_entity_1.Role)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

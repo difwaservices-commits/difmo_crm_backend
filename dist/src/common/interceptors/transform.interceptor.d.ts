@@ -6,5 +6,6 @@ export interface Response<T> {
     message: string;
 }
 export declare class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
+    private readonly logger;
     intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>>;
 }

@@ -22,10 +22,10 @@ export function setupApp(app: INestApplication) {
   const document = SwaggerModule.createDocument(app, config);
 
   try {
-      const yamlString = yaml.stringify(document, {});
-      fs.writeFileSync('./swagger.yaml', yamlString);
+    const yamlString = yaml.stringify(document, {});
+    fs.writeFileSync('./swagger.yaml', yamlString);
   } catch (e) {
-      console.warn('Could not write swagger.yaml', e);
+    console.warn('Could not write swagger.yaml', e);
   }
 
   SwaggerModule.setup('api', app, document);

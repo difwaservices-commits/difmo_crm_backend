@@ -17,6 +17,9 @@ const common_1 = require("@nestjs/common");
 const employee_service_1 = require("./employee.service");
 const employee_dto_1 = require("./dto/employee.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const ability_factory_1 = require("../access-control/ability.factory");
+const abilities_decorator_1 = require("../access-control/abilities.decorator");
+const abilities_guard_1 = require("../access-control/abilities.guard");
 let EmployeeController = class EmployeeController {
     employeeService;
     constructor(employeeService) {
@@ -25,13 +28,16 @@ let EmployeeController = class EmployeeController {
     async create(createEmployeeDto) {
         return this.employeeService.create(createEmployeeDto);
     }
+    async fixRoles() {
+        return this.employeeService.fixEmployeeRoles();
+    }
     async getCount(companyId) {
         const count = await this.employeeService.count(companyId);
         return { count };
     }
     async findAll(query) {
         const employees = await this.employeeService.findAll(query);
-        const transformedEmployees = employees.map(emp => ({
+        const transformedEmployees = employees.map((emp) => ({
             id: emp.id,
             userId: emp.userId,
             companyId: emp.companyId,
@@ -49,24 +55,29 @@ let EmployeeController = class EmployeeController {
             skills: emp.skills,
             createdAt: emp.createdAt,
             updatedAt: emp.updatedAt,
-            user: emp.user ? {
-                id: emp.user.id,
-                email: emp.user.email,
-                firstName: emp.user.firstName,
-                lastName: emp.user.lastName,
-                phone: emp.user.phone,
-                isActive: emp.user.isActive,
-                avatar: emp.user['avatar']
-            } : null,
-            company: emp.company ? {
-                id: emp.company.id,
-                name: emp.company.name,
-                email: emp.company.email,
-            } : null,
-            department: emp.department ? {
-                id: emp.department.id,
-                name: emp.department.name,
-            } : null,
+            user: emp.user
+                ? {
+                    id: emp.user.id,
+                    email: emp.user.email,
+                    firstName: emp.user.firstName,
+                    lastName: emp.user.lastName,
+                    phone: emp.user.phone,
+                    isActive: emp.user.isActive,
+                }
+                : null,
+            company: emp.company
+                ? {
+                    id: emp.company.id,
+                    name: emp.company.name,
+                    email: emp.company.email,
+                }
+                : null,
+            department: emp.department
+                ? {
+                    id: emp.department.id,
+                    name: emp.department.name,
+                }
+                : null,
         }));
         return transformedEmployees;
     }
@@ -83,13 +94,22 @@ let EmployeeController = class EmployeeController {
 exports.EmployeeController = EmployeeController;
 __decorate([
     (0, common_1.Post)(),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Create, subject: 'employee' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [employee_dto_1.CreateEmployeeDto]),
     __metadata("design:returntype", Promise)
 ], EmployeeController.prototype, "create", null);
 __decorate([
+    (0, common_1.Post)('fix-roles'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Update, subject: 'employee' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], EmployeeController.prototype, "fixRoles", null);
+__decorate([
     (0, common_1.Get)('stats/count'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Read, subject: 'employee' }),
     __param(0, (0, common_1.Query)('companyId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -97,6 +117,7 @@ __decorate([
 ], EmployeeController.prototype, "getCount", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Read, subject: 'employee' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -104,6 +125,7 @@ __decorate([
 ], EmployeeController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Read, subject: 'employee' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -111,6 +133,7 @@ __decorate([
 ], EmployeeController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Put)(':id'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Update, subject: 'employee' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -119,6 +142,7 @@ __decorate([
 ], EmployeeController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
+    (0, abilities_decorator_1.CheckAbilities)({ action: ability_factory_1.Action.Delete, subject: 'employee' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -126,7 +150,7 @@ __decorate([
 ], EmployeeController.prototype, "remove", null);
 exports.EmployeeController = EmployeeController = __decorate([
     (0, common_1.Controller)('employees'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, abilities_guard_1.AbilitiesGuard),
     __metadata("design:paramtypes", [employee_service_1.EmployeeService])
 ], EmployeeController);
 //# sourceMappingURL=employee.controller.js.map

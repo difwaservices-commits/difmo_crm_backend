@@ -30,7 +30,10 @@ let CompanyService = class CompanyService {
         return this.companyRepository.findOne({ where: { email } });
     }
     async findById(id) {
-        return this.companyRepository.findOne({ where: { id }, relations: ['users', 'departments'] });
+        return this.companyRepository.findOne({
+            where: { id },
+            relations: ['users', 'departments'],
+        });
     }
     async update(id, updateData) {
         await this.companyRepository.update(id, updateData);

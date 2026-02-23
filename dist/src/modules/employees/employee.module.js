@@ -10,17 +10,20 @@ exports.EmployeeModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const employee_entity_1 = require("./employee.entity");
+const company_entity_1 = require("../companies/company.entity");
 const employee_service_1 = require("./employee.service");
 const employee_controller_1 = require("./employee.controller");
 const user_module_1 = require("../users/user.module");
+const access_control_module_1 = require("../access-control/access-control.module");
 let EmployeeModule = class EmployeeModule {
 };
 exports.EmployeeModule = EmployeeModule;
 exports.EmployeeModule = EmployeeModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([employee_entity_1.Employee]),
-            user_module_1.UserModule
+            typeorm_1.TypeOrmModule.forFeature([employee_entity_1.Employee, company_entity_1.Company]),
+            user_module_1.UserModule,
+            access_control_module_1.AccessControlModule,
         ],
         controllers: [employee_controller_1.EmployeeController],
         providers: [employee_service_1.EmployeeService],

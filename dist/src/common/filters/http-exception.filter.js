@@ -15,14 +15,16 @@ let HttpExceptionFilter = class HttpExceptionFilter {
         const request = ctx.getRequest();
         const status = exception.getStatus();
         const exceptionResponse = exception.getResponse();
-        response
-            .status(status)
-            .json({
+        response.status(status).json({
             statusCode: status,
             timestamp: new Date().toISOString(),
             path: request.url,
-            message: typeof exceptionResponse === 'string' ? exceptionResponse : exceptionResponse.message,
-            error: typeof exceptionResponse === 'string' ? exceptionResponse : exceptionResponse.error,
+            message: typeof exceptionResponse === 'string'
+                ? exceptionResponse
+                : exceptionResponse.message,
+            error: typeof exceptionResponse === 'string'
+                ? exceptionResponse
+                : exceptionResponse.error,
         });
     }
 };
