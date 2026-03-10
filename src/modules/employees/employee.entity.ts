@@ -80,7 +80,7 @@ export class Employee {
   @Column({ type: 'simple-array', nullable: true })
   skills: string[];
 
-  // ✅ Soft delete flag
+  //  Soft delete flag
   @Column({ default: false })
   isDeleted: boolean;
 

@@ -4,7 +4,31 @@ import {
   IsOptional,
   IsDateString,
   IsArray,
+  IsEnum,
 } from 'class-validator';
+
+// Defining Enums to match your logic exactly
+export enum EmployeeBranch {
+  NEW_YORK = 'New York',
+  WASHINGTON = 'Washington',
+  HEADQUARTER = 'Headquarter',
+  SINGAPUR = 'Singapur',
+  REMOTE = 'Remote',
+}
+
+export enum EmploymentType {
+  FULL_TIME = 'full-time',
+  PART_TIME = 'part-time',
+  CONTRACT_BASE = 'contract-base',
+  INTERN = 'intern',
+}
+
+export enum EmployeeStatus {
+  ACTIVE = 'Active',
+  PENDING = 'Pending',
+  ON_LEAVE = 'On-Leave',
+  TERMINATED = 'Terminated',
+}
 
 export class CreateEmployeeDto {
   @IsString()
@@ -53,17 +77,17 @@ export class CreateEmployeeDto {
   @IsOptional()
   manager?: string;
 
-  @IsString()
+  @IsEnum(EmployeeBranch)
   @IsOptional()
-  branch?: string;
+  branch?: EmployeeBranch;
 
-  @IsString()
+  @IsEnum(EmploymentType)
   @IsOptional()
-  employmentType?: string;
+  employmentType?: EmploymentType;
 
-  @IsString()
+  @IsEnum(EmployeeStatus)
   @IsOptional()
-  status?: string;
+  status?: EmployeeStatus;
 
   @IsString()
   @IsOptional()
@@ -78,8 +102,15 @@ export class CreateEmployeeDto {
   emergencyPhone?: string;
 
   @IsArray()
+  @IsString({ each: true })
   @IsOptional()
   skills?: string[];
+
+  // Logic: Added to support your EmployeeService role assignment
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  roleIds?: string[];
 }
 
 export class UpdateEmployeeDto {
@@ -111,17 +142,17 @@ export class UpdateEmployeeDto {
   @IsOptional()
   manager?: string;
 
-  @IsString()
+  @IsEnum(EmployeeBranch)
   @IsOptional()
-  branch?: string;
+  branch?: EmployeeBranch;
 
-  @IsString()
+  @IsEnum(EmploymentType)
   @IsOptional()
-  employmentType?: string;
+  employmentType?: EmploymentType;
 
-  @IsString()
+  @IsEnum(EmployeeStatus)
   @IsOptional()
-  status?: string;
+  status?: EmployeeStatus;
 
   @IsString()
   @IsOptional()
@@ -136,6 +167,12 @@ export class UpdateEmployeeDto {
   emergencyPhone?: string;
 
   @IsArray()
+  @IsString({ each: true })
   @IsOptional()
   skills?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  roleIds?: string[];
 }

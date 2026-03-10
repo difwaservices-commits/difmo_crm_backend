@@ -18,7 +18,7 @@ export class EmployeeService {
     private companyRepository: Repository<Company>,
     private userService: UserService,
     private mailerService: MailerService,
-  ) { }
+  ) {}
 
   async create(
     createEmployeeDto: CreateEmployeeDto & { roleIds?: string[] },
@@ -33,6 +33,7 @@ export class EmployeeService {
       if (existingUser) {
         userId = existingUser.id;
       } else {
+        //create a new employees
         const newUser = await this.userService.create({
           email: createEmployeeDto.email,
           password: createEmployeeDto.password || 'Welcome123!',
@@ -45,7 +46,7 @@ export class EmployeeService {
         userId = newUser.id;
       }
     }
-
+    //if user not exist
     if (!userId) {
       throw new Error(
         'User ID is required or sufficient details to create a user',

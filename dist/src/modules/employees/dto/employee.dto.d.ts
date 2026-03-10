@@ -1,3 +1,22 @@
+export declare enum EmployeeBranch {
+    NEW_YORK = "New York",
+    WASHINGTON = "Washington",
+    HEADQUARTER = "Headquarter",
+    SINGAPUR = "Singapur",
+    REMOTE = "Remote"
+}
+export declare enum EmploymentType {
+    FULL_TIME = "full-time",
+    PART_TIME = "part-time",
+    CONTRACT_BASE = "contract-base",
+    INTERN = "intern"
+}
+export declare enum EmployeeStatus {
+    ACTIVE = "Active",
+    PENDING = "Pending",
+    ON_LEAVE = "On-Leave",
+    TERMINATED = "Terminated"
+}
 export declare class CreateEmployeeDto {
     userId?: string;
     email?: string;
@@ -11,13 +30,14 @@ export declare class CreateEmployeeDto {
     hireDate: string;
     salary?: string;
     manager?: string;
-    branch?: string;
-    employmentType?: string;
-    status?: string;
+    branch?: EmployeeBranch;
+    employmentType?: EmploymentType;
+    status?: EmployeeStatus;
     address?: string;
     emergencyContact?: string;
     emergencyPhone?: string;
     skills?: string[];
+    roleIds?: string[];
 }
 export declare class UpdateEmployeeDto {
     firstName?: string;
@@ -27,11 +47,12 @@ export declare class UpdateEmployeeDto {
     hireDate?: string;
     salary?: string;
     manager?: string;
-    branch?: string;
-    employmentType?: string;
-    status?: string;
+    branch?: EmployeeBranch;
+    employmentType?: EmploymentType;
+    status?: EmployeeStatus;
     address?: string;
     emergencyContact?: string;
     emergencyPhone?: string;
     skills?: string[];
+    roleIds?: string[];
 }
