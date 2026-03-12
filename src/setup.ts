@@ -6,7 +6,19 @@ import * as yaml from 'yaml';
 import * as fs from 'fs';
 
 export function setupApp(app: INestApplication) {
-  app.useGlobalPipes(new ValidationPipe());
+  // --- UPDATED THIS SECTION ---
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,           // Strips out fields not in the DTO
+      transform: true,           // CRITICAL: Transforms plain JSON to DTO class
+      forbidNonWhitelisted: true, // Throws error if extra fields are sent
+      transformOptions: {
+        enableImplicitConversion: true, // Auto-converts numbers/booleans
+      },
+    }),
+  );
+  // -----------------------------
+
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableCors();
@@ -19,6 +31,7 @@ export function setupApp(app: INestApplication) {
     .addServer('http://localhost:3000', 'Development')
     .addServer('https://api.difmocrm.com', 'Production')
     .build();
+    
   const document = SwaggerModule.createDocument(app, config);
 
   try {

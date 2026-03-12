@@ -14,8 +14,9 @@ export declare enum EmploymentType {
 export declare enum EmployeeStatus {
     ACTIVE = "Active",
     PENDING = "Pending",
+    INACTIVE = "In-Active",
     ON_LEAVE = "On-Leave",
-    TERMINATED = "Terminated"
+    Terminate = "Terminated"
 }
 export declare class CreateEmployeeDto {
     userId?: string;

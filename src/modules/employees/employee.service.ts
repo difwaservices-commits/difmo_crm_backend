@@ -251,6 +251,11 @@ export class EmployeeService {
     }
   }
 
+//   async updateStatus(id: string, status: EmployeeStatus): Promise<Employee> {
+//   await this.employeeRepository.update(id, { status });
+//   return this.findOne(id); // returns updated employee
+// }
+
   // async remove(id: string): Promise<void> {
   //   await this.employeeRepository.delete(id);
   // }

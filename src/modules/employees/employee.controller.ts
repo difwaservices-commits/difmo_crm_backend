@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -112,4 +113,15 @@ export class EmployeeController {
   async remove(@Param('id') id: string) {
     return this.employeeService.remove(id);
   }
+
+
+  // @Patch(':id/status')
+  // @CheckAbilities({ action: Action.Update, subject: 'employee' })
+  // async updateStatus(
+  //   @Param('id') id: string,
+  //   @Body() updateStatusDto: Employee,
+  // ) {
+  //   return this.employeeService.updateStatus(id, updateStatusDto.status);
+  // }
+
 }

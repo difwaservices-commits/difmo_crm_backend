@@ -8,6 +8,7 @@ import {
 
 export class CheckInDto {
   @IsString()
+  @IsOptional()
   employeeId: string;
 
   @IsString()

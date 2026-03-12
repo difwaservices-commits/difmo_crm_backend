@@ -26,8 +26,9 @@ export enum EmploymentType {
 export enum EmployeeStatus {
   ACTIVE = 'Active',
   PENDING = 'Pending',
+  INACTIVE = 'In-Active',
   ON_LEAVE = 'On-Leave',
-  TERMINATED = 'Terminated',
+  Terminate = 'Terminated',
 }
 
 export class CreateEmployeeDto {
@@ -150,8 +151,8 @@ export class UpdateEmployeeDto {
   @IsOptional()
   employmentType?: EmploymentType;
 
-  @IsEnum(EmployeeStatus)
-  @IsOptional()
+   @IsEnum(EmployeeStatus)
+   @IsOptional()
   status?: EmployeeStatus;
 
   @IsString()

@@ -30,8 +30,9 @@ var EmployeeStatus;
 (function (EmployeeStatus) {
     EmployeeStatus["ACTIVE"] = "Active";
     EmployeeStatus["PENDING"] = "Pending";
+    EmployeeStatus["INACTIVE"] = "In-Active";
     EmployeeStatus["ON_LEAVE"] = "On-Leave";
-    EmployeeStatus["TERMINATED"] = "Terminated";
+    EmployeeStatus["Terminate"] = "Terminated";
 })(EmployeeStatus || (exports.EmployeeStatus = EmployeeStatus = {}));
 class CreateEmployeeDto {
     userId;
