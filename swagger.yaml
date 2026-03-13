@@ -109,23 +109,39 @@ paths:
         "200":
           description: ""
       tags: *a2
-  /departments:
+  /employees:
     post:
-      operationId: DepartmentController_create
+      operationId: EmployeeController_create
       parameters: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateDepartmentDto"
+              $ref: "#/components/schemas/CreateEmployeeDto"
       responses:
         "201":
           description: ""
       tags: &a3
-        - Department
+        - Employee
     get:
-      operationId: DepartmentController_findAll
+      operationId: EmployeeController_findAll
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+  /employees/fix-roles:
+    post:
+      operationId: EmployeeController_fixRoles
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a3
+  /employees/stats/count:
+    get:
+      operationId: EmployeeController_getCount
       parameters:
         - name: companyId
           required: true
@@ -136,9 +152,9 @@ paths:
         "200":
           description: ""
       tags: *a3
-  /departments/{id}:
+  /employees/{id}:
     get:
-      operationId: DepartmentController_findOne
+      operationId: EmployeeController_findOne
       parameters:
         - name: id
           required: true
@@ -149,8 +165,8 @@ paths:
         "200":
           description: ""
       tags: *a3
-    patch:
-      operationId: DepartmentController_update
+    put:
+      operationId: EmployeeController_update
       parameters:
         - name: id
           required: true
@@ -162,13 +178,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateDepartmentDto"
+              $ref: "#/components/schemas/UpdateEmployeeDto"
       responses:
         "200":
           description: ""
       tags: *a3
     delete:
-      operationId: DepartmentController_remove
+      operationId: EmployeeController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+  /employees/verify/{id}:
+    patch:
+      operationId: EmployeeController_verifyEmployee
       parameters:
         - name: id
           required: true
@@ -248,39 +277,23 @@ paths:
         "201":
           description: ""
       tags: *a4
-  /employees:
+  /departments:
     post:
-      operationId: EmployeeController_create
+      operationId: DepartmentController_create
       parameters: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateEmployeeDto"
+              $ref: "#/components/schemas/CreateDepartmentDto"
       responses:
         "201":
           description: ""
       tags: &a5
-        - Employee
+        - Department
     get:
-      operationId: EmployeeController_findAll
-      parameters: []
-      responses:
-        "200":
-          description: ""
-      tags: *a5
-  /employees/fix-roles:
-    post:
-      operationId: EmployeeController_fixRoles
-      parameters: []
-      responses:
-        "201":
-          description: ""
-      tags: *a5
-  /employees/stats/count:
-    get:
-      operationId: EmployeeController_getCount
+      operationId: DepartmentController_findAll
       parameters:
         - name: companyId
           required: true
@@ -291,9 +304,9 @@ paths:
         "200":
           description: ""
       tags: *a5
-  /employees/{id}:
+  /departments/{id}:
     get:
-      operationId: EmployeeController_findOne
+      operationId: DepartmentController_findOne
       parameters:
         - name: id
           required: true
@@ -304,8 +317,8 @@ paths:
         "200":
           description: ""
       tags: *a5
-    put:
-      operationId: EmployeeController_update
+    patch:
+      operationId: DepartmentController_update
       parameters:
         - name: id
           required: true
@@ -317,13 +330,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateEmployeeDto"
+              $ref: "#/components/schemas/UpdateDepartmentDto"
       responses:
         "200":
           description: ""
       tags: *a5
     delete:
-      operationId: EmployeeController_remove
+      operationId: DepartmentController_remove
       parameters:
         - name: id
           required: true
@@ -804,16 +817,16 @@ components:
     CreateCompanyDto:
       type: object
       properties: {}
-    CreateDepartmentDto:
-      type: object
-      properties: {}
-    UpdateDepartmentDto:
-      type: object
-      properties: {}
     CreateEmployeeDto:
       type: object
       properties: {}
     UpdateEmployeeDto:
+      type: object
+      properties: {}
+    CreateDepartmentDto:
+      type: object
+      properties: {}
+    UpdateDepartmentDto:
       type: object
       properties: {}
     CheckInDto:

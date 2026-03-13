@@ -7,11 +7,13 @@ import { JwtStrategy } from './jwt.strategy';
 import { CompanyModule } from '../companies/company.module';
 import { UserModule } from '../users/user.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EmployeeModule } from '../employees/employee.module';
 
 @Module({
   imports: [
     CompanyModule,
     UserModule,
+    EmployeeModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

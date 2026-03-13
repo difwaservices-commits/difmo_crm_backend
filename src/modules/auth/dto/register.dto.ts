@@ -60,6 +60,10 @@ export class RegisterDto {
 
   @IsString()
   @IsOptional()
+  employeeId:String;
+
+  @IsString()
+  @IsOptional()
   phone?: string;
 
   @IsString()

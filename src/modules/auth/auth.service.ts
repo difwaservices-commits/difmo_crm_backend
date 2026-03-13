@@ -3,14 +3,17 @@ import { JwtService } from '@nestjs/jwt';
 import { CompanyService } from '../companies/company.service';
 import { UserService } from '../users/user.service';
 import * as bcrypt from 'bcrypt';
+import { EmployeeService } from '../employees/employee.service';
+import { Employee } from '../employees/employee.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     private companyService: CompanyService,
     private userService: UserService,
+    private employeeService: EmployeeService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.userService.findByEmail(email);
@@ -22,17 +25,27 @@ export class AuthService {
   }
 
   async login(user: any) {
+    const employee = await this.employeeService.findByUserId(user.id);
     const payload = {
       username: user.email,
       sub: user.id,
       companyId: user.company?.id,
+      employeeId: user.employee?.id,
+
       roles: user.roles,
     };
+    console.log(payload)
+    console.log(user.employeeId)
     return {
       access_token: this.jwtService.sign(payload),
       user: user,
+      employeeId: user.employee?.id,
+
     };
+    console.log(user.employeeId)
   }
+
+
 
   async register(data: any) {
     console.log('Registering with data:', JSON.stringify(data));
@@ -67,6 +80,7 @@ export class AuthService {
         lastName: data.lastName,
         phone: data.phone,
         companyId: company.id,
+
         isActive: true,
       });
 

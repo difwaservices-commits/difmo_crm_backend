@@ -25,7 +25,6 @@ export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
   @Post('check-in')
-  @Permissions('attendance:create')
   @CheckAbilities({ action: Action.Create, subject: 'attendance' })
   async checkIn(@Body() checkInDto: CheckInDto) {
     return this.attendanceService.checkIn(checkInDto);
@@ -75,4 +74,6 @@ export class AttendanceController {
   async findOne(@Param('id') id: string) {
     return this.attendanceService.findOne(id);
   }
+
+  
 }

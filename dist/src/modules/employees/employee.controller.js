@@ -90,6 +90,9 @@ let EmployeeController = class EmployeeController {
     async remove(id) {
         return this.employeeService.remove(id);
     }
+    async verifyEmployee(id) {
+        return this.employeeService.verifyEmployee(id);
+    }
 };
 exports.EmployeeController = EmployeeController;
 __decorate([
@@ -148,6 +151,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], EmployeeController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Patch)('verify/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], EmployeeController.prototype, "verifyEmployee", null);
 exports.EmployeeController = EmployeeController = __decorate([
     (0, common_1.Controller)('employees'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, abilities_guard_1.AbilitiesGuard),

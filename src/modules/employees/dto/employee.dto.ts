@@ -65,6 +65,10 @@ export class CreateEmployeeDto {
   departmentId?: string;
 
   @IsString()
+  @IsOptional()
+  employeeId?:String;
+
+  @IsString()
   role: string;
 
   @IsDateString()

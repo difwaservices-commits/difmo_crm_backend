@@ -43,6 +43,7 @@ class CreateEmployeeDto {
     phone;
     companyId;
     departmentId;
+    employeeId;
     role;
     hireDate;
     salary;
@@ -97,6 +98,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateEmployeeDto.prototype, "departmentId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateEmployeeDto.prototype, "employeeId", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)

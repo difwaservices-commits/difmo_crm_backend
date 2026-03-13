@@ -27,6 +27,7 @@ export declare class CreateEmployeeDto {
     phone?: string;
     companyId?: string;
     departmentId?: string;
+    employeeId?: String;
     role: string;
     hireDate: string;
     salary?: string;

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Employee } from './employee.entity';
@@ -191,19 +191,21 @@ export class EmployeeService {
     return results;
   }
 
-  async findOne(id: string): Promise<Employee | null> {
+  async findOne(userId: string): Promise<Employee | null> {
     return this.employeeRepository.findOne({
-      where: { id },
+      where: { userId: userId },
       relations: ['user', 'company', 'department'],
     });
   }
 
-  async findByUserId(userId: string): Promise<Employee | null> {
-    return this.employeeRepository.findOne({
-      where: { userId },
-      relations: ['user', 'company', 'department'],
-    });
-  }
+ async findByUserId(userId: string): Promise<Employee | null> {
+  return this.employeeRepository.findOne({
+    where: {
+      user: { id: userId },
+    },
+    relations: ['user', 'company', 'department'],
+  });
+}
 
   async update(
     id: string,
@@ -318,6 +320,22 @@ export class EmployeeService {
 
     return query.getCount();
   }
+
+  
+async verifyEmployee(employeeId: string) {
+  const employee = await this.employeeRepository.findOne({
+    where: { id: employeeId },
+  });
+
+  //  Check if employee exists
+  if (!employee) {
+    throw new NotFoundException('Employee not found');
+  }
+
+  employee.isVerified = true;
+
+  return this.employeeRepository.save(employee);
+}
 
   async fixEmployeeRoles(companyId?: string) {
     console.log('[EmployeeService] Fixing employee roles...');

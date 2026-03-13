@@ -33,6 +33,9 @@ export class Employee {
   @Column({ nullable: true })
   companyId: string;
 
+  //  @Column({nullable:true})
+  //  @employeeId:String;
+
   @ManyToOne(() => Department, { nullable: true })
   @JoinColumn()
   department: Department;
@@ -83,6 +86,9 @@ export class Employee {
   //  Soft delete flag
   @Column({ default: false })
   isDeleted: boolean;
+
+  @Column({ default: false })
+  isVerified: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

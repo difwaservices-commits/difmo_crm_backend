@@ -72,6 +72,12 @@ let AttendanceService = class AttendanceService {
                 .split(':')
                 .map(Number);
             const earliestHour = openHour - 1;
+            if (!employee) {
+                throw new common_1.NotFoundException('Employee not found');
+            }
+            if (!employee.isVerified) {
+                throw new common_1.ForbiddenException('Employee is not verified by admin. Please contact admin.');
+            }
             if (ist.hours < earliestHour) {
                 const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
                 throw new common_1.ForbiddenException(`Cannot check in before ${earliestStr} AM.`);

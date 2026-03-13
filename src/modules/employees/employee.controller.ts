@@ -114,6 +114,12 @@ export class EmployeeController {
     return this.employeeService.remove(id);
   }
 
+@Patch('verify/:id')
+async verifyEmployee(@Param('id') id: string) {
+  return this.employeeService.verifyEmployee(id);
+}
+  
+
 
   // @Patch(':id/status')
   // @CheckAbilities({ action: Action.Update, subject: 'employee' })

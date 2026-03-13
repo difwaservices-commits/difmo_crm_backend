@@ -11,6 +11,7 @@ export declare class RegisterDto {
     firstName: string;
     lastName: string;
     email: string;
+    employeeId: String;
     phone?: string;
     password: string;
     timezone: string;

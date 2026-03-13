@@ -7,6 +7,7 @@ export declare class AuthController {
     login(req: any): Promise<{
         access_token: string;
         user: any;
+        employeeId: any;
     }>;
     register(body: any): Promise<{
         company: import("../companies/company.entity").Company;
