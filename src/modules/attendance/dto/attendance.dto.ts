@@ -31,6 +31,12 @@ export class CheckInDto {
 export class CheckOutDto {
   @IsString()
   attendanceId: string;
+    @IsString()
+
+    
+  @IsOptional()
+  employeeId: string;
+  
 
   @IsNumber()
   @IsOptional()

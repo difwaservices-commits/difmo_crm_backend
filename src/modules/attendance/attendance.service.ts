@@ -226,17 +226,31 @@ export class AttendanceService {
     const checkOutTime = ist.timeString;
 
     // Calculate work hours
+    // Calculate work hours
     if (attendance.checkInTime) {
-      const checkIn = new Date(`2000-01-01 ${attendance.checkInTime}`);
-      const checkOut = new Date(`2000-01-01 ${checkOutTime}`);
-      const workHours =
-        (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
-      attendance.workHours = Math.round(workHours * 100) / 100;
 
-      // Overtime logic
+      const checkIn = new Date(`2000-01-01T${attendance.checkInTime}`);
+      const checkOut = new Date(`2000-01-01T${checkOutTime}`);
+
+      const diffMs = checkOut.getTime() - checkIn.getTime();
+
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      const totalHours = hours + minutes / 60;
+
+      attendance.workHours = parseFloat(totalHours.toFixed(2));
+
+      // Overtime calculation
       if (attendance.workHours > 8) {
-        attendance.overtime =
-          Math.round((attendance.workHours - 8) * 100) / 100;
+        attendance.overtime = parseFloat(
+          (attendance.workHours - 8).toFixed(2)
+        );
+      }
+
+      // Half day logic
+      if (attendance.workHours < 4) {
+        attendance.status = 'half_day';
       }
     }
 
