@@ -11,7 +11,7 @@ export declare class EmployeeController {
         count: number;
     }>;
     findAll(query: any): Promise<{
-        id: string;
+        Id: string;
         userId: string;
         companyId: string;
         departmentId: string;

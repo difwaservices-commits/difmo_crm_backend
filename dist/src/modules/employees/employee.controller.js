@@ -38,7 +38,7 @@ let EmployeeController = class EmployeeController {
     async findAll(query) {
         const employees = await this.employeeService.findAll(query);
         const transformedEmployees = employees.map((emp) => ({
-            id: emp.id,
+            Id: emp.id,
             userId: emp.userId,
             companyId: emp.companyId,
             departmentId: emp.departmentId,

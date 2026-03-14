@@ -48,7 +48,7 @@ export class EmployeeController {
 
     // CRITICAL: Transform to remove circular references (Employee -> User -> Company -> Users -> ...)
     const transformedEmployees = employees.map((emp) => ({
-      id: emp.id,
+      Id: emp.id,
       userId: emp.userId,
       companyId: emp.companyId,
       departmentId: emp.departmentId,
