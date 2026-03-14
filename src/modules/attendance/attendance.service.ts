@@ -27,7 +27,7 @@ export class AttendanceService {
     private attendanceRepository: Repository<Attendance>,
     private leavesService: LeavesService,
     private employeeService: EmployeeService,
-  ) {}
+  ) { }
 
   private calculateDistance(
     lat1: number,
@@ -91,6 +91,7 @@ export class AttendanceService {
       }
     }
 
+
     // 3. Time Constraints based on Company Settings
     const employee = await this.employeeService.findOne(checkInDto.employeeId);
     if (employee && employee.company && employee.company.openingTime) {
@@ -101,6 +102,16 @@ export class AttendanceService {
 
       // Allow check-in 1 hour before opening time
       const earliestHour = openHour - 1;
+      if (!employee) {
+        throw new NotFoundException('Employee not found');
+      }
+
+      //  ADD THIS BLOCK
+      if (!employee.isVerified) {
+        throw new ForbiddenException(
+          'Employee is not verified by admin. Please contact admin.',
+        );
+      }
 
       if (ist.hours < earliestHour) {
         const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;

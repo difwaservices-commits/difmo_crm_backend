@@ -74,4 +74,6 @@ export class AttendanceController {
   async findOne(@Param('id') id: string) {
     return this.attendanceService.findOne(id);
   }
+
+  
 }

@@ -25,6 +25,7 @@ export declare class Employee {
     emergencyPhone: string;
     skills: string[];
     isDeleted: boolean;
+    isVerified: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

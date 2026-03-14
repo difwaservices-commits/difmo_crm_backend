@@ -41,6 +41,7 @@ export class Attendance {
 
   @Column({ nullable: true })
   notes: string;
+  
 
   @Column({ nullable: true })
   location: string;

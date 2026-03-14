@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Employee } from './employee.entity';
@@ -18,7 +18,7 @@ export class EmployeeService {
     private companyRepository: Repository<Company>,
     private userService: UserService,
     private mailerService: MailerService,
-  ) { }
+  ) {}
 
   async create(
     createEmployeeDto: CreateEmployeeDto & { roleIds?: string[] },
@@ -33,6 +33,7 @@ export class EmployeeService {
       if (existingUser) {
         userId = existingUser.id;
       } else {
+        //create a new employees
         const newUser = await this.userService.create({
           email: createEmployeeDto.email,
           password: createEmployeeDto.password || 'Welcome123!',
@@ -45,7 +46,7 @@ export class EmployeeService {
         userId = newUser.id;
       }
     }
-
+    //if user not exist
     if (!userId) {
       throw new Error(
         'User ID is required or sufficient details to create a user',
@@ -190,19 +191,21 @@ export class EmployeeService {
     return results;
   }
 
-  async findOne(id: string): Promise<Employee | null> {
+  async findOne(userId: string): Promise<Employee | null> {
     return this.employeeRepository.findOne({
-      where: { id },
+      where: { userId: userId },
       relations: ['user', 'company', 'department'],
     });
   }
 
-  async findByUserId(userId: string): Promise<Employee | null> {
-    return this.employeeRepository.findOne({
-      where: { userId },
-      relations: ['user', 'company', 'department'],
-    });
-  }
+ async findByUserId(userId: string): Promise<Employee | null> {
+  return this.employeeRepository.findOne({
+    where: {
+      user: { id: userId },
+    },
+    relations: ['user', 'company', 'department'],
+  });
+}
 
   async update(
     id: string,
@@ -249,6 +252,11 @@ export class EmployeeService {
       throw error;
     }
   }
+
+//   async updateStatus(id: string, status: EmployeeStatus): Promise<Employee> {
+//   await this.employeeRepository.update(id, { status });
+//   return this.findOne(id); // returns updated employee
+// }
 
   // async remove(id: string): Promise<void> {
   //   await this.employeeRepository.delete(id);
@@ -312,6 +320,22 @@ export class EmployeeService {
 
     return query.getCount();
   }
+
+  
+async verifyEmployee(employeeId: string) {
+  const employee = await this.employeeRepository.findOne({
+    where: { id: employeeId },
+  });
+
+  //  Check if employee exists
+  if (!employee) {
+    throw new NotFoundException('Employee not found');
+  }
+
+  employee.isVerified = true;
+
+  return this.employeeRepository.save(employee);
+}
 
   async fixEmployeeRoles(companyId?: string) {
     console.log('[EmployeeService] Fixing employee roles...');

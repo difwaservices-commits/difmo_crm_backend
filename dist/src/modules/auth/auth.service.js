@@ -48,13 +48,16 @@ const jwt_1 = require("@nestjs/jwt");
 const company_service_1 = require("../companies/company.service");
 const user_service_1 = require("../users/user.service");
 const bcrypt = __importStar(require("bcrypt"));
+const employee_service_1 = require("../employees/employee.service");
 let AuthService = class AuthService {
     companyService;
     userService;
+    employeeService;
     jwtService;
-    constructor(companyService, userService, jwtService) {
+    constructor(companyService, userService, employeeService, jwtService) {
         this.companyService = companyService;
         this.userService = userService;
+        this.employeeService = employeeService;
         this.jwtService = jwtService;
     }
     async validateUser(email, pass) {
@@ -66,16 +69,22 @@ let AuthService = class AuthService {
         return null;
     }
     async login(user) {
+        const employee = await this.employeeService.findByUserId(user.id);
         const payload = {
             username: user.email,
             sub: user.id,
             companyId: user.company?.id,
+            employeeId: user.employee?.id,
             roles: user.roles,
         };
+        console.log(payload);
+        console.log(user.employeeId);
         return {
             access_token: this.jwtService.sign(payload),
             user: user,
+            employeeId: user.employee?.id,
         };
+        console.log(user.employeeId);
     }
     async register(data) {
         console.log('Registering with data:', JSON.stringify(data));
@@ -122,6 +131,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [company_service_1.CompanyService,
         user_service_1.UserService,
+        employee_service_1.EmployeeService,
         jwt_1.JwtService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

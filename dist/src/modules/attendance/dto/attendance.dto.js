@@ -21,6 +21,7 @@ class CheckInDto {
 exports.CheckInDto = CheckInDto;
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CheckInDto.prototype, "employeeId", void 0);
 __decorate([

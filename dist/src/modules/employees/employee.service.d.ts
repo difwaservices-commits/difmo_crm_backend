@@ -14,13 +14,14 @@ export declare class EmployeeService {
         roleIds?: string[];
     }): Promise<Employee>;
     findAll(filters?: any): Promise<Employee[]>;
-    findOne(id: string): Promise<Employee | null>;
+    findOne(userId: string): Promise<Employee | null>;
     findByUserId(userId: string): Promise<Employee | null>;
     update(id: string, updateEmployeeDto: UpdateEmployeeDto & {
         roleIds?: string[];
     }): Promise<Employee | null>;
     remove(id: string): Promise<void>;
     count(companyId?: string): Promise<number>;
+    verifyEmployee(employeeId: string): Promise<Employee>;
     fixEmployeeRoles(companyId?: string): Promise<{
         message: string;
     }>;

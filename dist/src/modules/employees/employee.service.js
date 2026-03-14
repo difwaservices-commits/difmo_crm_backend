@@ -144,15 +144,17 @@ let EmployeeService = class EmployeeService {
         console.log('[EmployeeService] Query returned', results.length, 'employees');
         return results;
     }
-    async findOne(id) {
+    async findOne(userId) {
         return this.employeeRepository.findOne({
-            where: { id },
+            where: { userId: userId },
             relations: ['user', 'company', 'department'],
         });
     }
     async findByUserId(userId) {
         return this.employeeRepository.findOne({
-            where: { userId },
+            where: {
+                user: { id: userId },
+            },
             relations: ['user', 'company', 'department'],
         });
     }
@@ -210,6 +212,16 @@ let EmployeeService = class EmployeeService {
             query.where('employee.companyId = :companyId', { companyId });
         }
         return query.getCount();
+    }
+    async verifyEmployee(employeeId) {
+        const employee = await this.employeeRepository.findOne({
+            where: { id: employeeId },
+        });
+        if (!employee) {
+            throw new common_1.NotFoundException('Employee not found');
+        }
+        employee.isVerified = true;
+        return this.employeeRepository.save(employee);
     }
     async fixEmployeeRoles(companyId) {
         console.log('[EmployeeService] Fixing employee roles...');

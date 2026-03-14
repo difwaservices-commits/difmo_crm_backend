@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -47,7 +48,7 @@ export class EmployeeController {
 
     // CRITICAL: Transform to remove circular references (Employee -> User -> Company -> Users -> ...)
     const transformedEmployees = employees.map((emp) => ({
-      id: emp.id,
+      Id: emp.id,
       userId: emp.userId,
       companyId: emp.companyId,
       departmentId: emp.departmentId,
@@ -112,4 +113,21 @@ export class EmployeeController {
   async remove(@Param('id') id: string) {
     return this.employeeService.remove(id);
   }
+
+@Patch('verify/:id')
+async verifyEmployee(@Param('id') id: string) {
+  return this.employeeService.verifyEmployee(id);
+}
+  
+
+
+  // @Patch(':id/status')
+  // @CheckAbilities({ action: Action.Update, subject: 'employee' })
+  // async updateStatus(
+  //   @Param('id') id: string,
+  //   @Body() updateStatusDto: Employee,
+  // ) {
+  //   return this.employeeService.updateStatus(id, updateStatusDto.status);
+  // }
+
 }
