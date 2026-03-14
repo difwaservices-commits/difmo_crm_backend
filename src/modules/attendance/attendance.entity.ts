@@ -41,7 +41,10 @@ export class Attendance {
 
   @Column({ nullable: true })
   notes: string;
-  
+
+  @Column({ default: false })
+  isVerified: boolean;
+
 
   @Column({ nullable: true })
   location: string;

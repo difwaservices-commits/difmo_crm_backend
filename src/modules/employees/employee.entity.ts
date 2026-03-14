@@ -85,6 +85,9 @@ export class Employee {
   @Column({ default: false })
   isDeleted: boolean
 
+  @Column({ default: false })
+  isVerified: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 
