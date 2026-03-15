@@ -37,39 +37,40 @@ let EmployeeController = class EmployeeController {
     }
     async findAll(query) {
         const employees = await this.employeeService.findAll(query);
-        const transformedEmployees = employees.map((emp) => ({
-            id: emp.id,
-            userId: emp.userId,
-            companyId: emp.companyId,
-            departmentId: emp.departmentId,
-            role: emp.role,
-            hireDate: emp.hireDate,
-            salary: emp.salary,
-            manager: emp.manager,
-            branch: emp.branch,
-            employmentType: emp.employmentType,
-            status: emp.status,
-            address: emp.address,
-            emergencyContact: emp.emergencyContact,
-            emergencyPhone: emp.emergencyPhone,
-            skills: emp.skills,
-            createdAt: emp.createdAt,
-            updatedAt: emp.updatedAt,
+        return employees.map((emp) => this.transformEmployee(emp));
+    }
+    async findOne(id) {
+        const employee = await this.employeeService.findOne(id);
+        return employee ? this.transformEmployee(employee) : null;
+    }
+    async update(id, updateEmployeeDto) {
+        const employee = await this.employeeService.update(id, updateEmployeeDto);
+        return employee ? this.transformEmployee(employee) : null;
+    }
+    transformEmployee(emp) {
+        return {
+            ...emp,
             user: emp.user
                 ? {
                     id: emp.user.id,
                     email: emp.user.email,
                     firstName: emp.user.firstName,
                     lastName: emp.user.lastName,
+                    name: `${emp.user.firstName || ''} ${emp.user.lastName || ''}`.trim(),
                     phone: emp.user.phone,
                     isActive: emp.user.isActive,
+                    roles: emp.user.roles?.map((r) => ({
+                        id: r.id,
+                        name: r.name,
+                        permissions: r.permissions,
+                    })),
+                    permissions: emp.user.permissions,
                 }
                 : null,
             company: emp.company
                 ? {
                     id: emp.company.id,
                     name: emp.company.name,
-                    email: emp.company.email,
                 }
                 : null,
             department: emp.department
@@ -78,14 +79,13 @@ let EmployeeController = class EmployeeController {
                     name: emp.department.name,
                 }
                 : null,
-        }));
-        return transformedEmployees;
-    }
-    async findOne(id) {
-        return this.employeeService.findOne(id);
-    }
-    async update(id, updateEmployeeDto) {
-        return this.employeeService.update(id, updateEmployeeDto);
+            designation: emp.designation
+                ? {
+                    id: emp.designation.id,
+                    name: emp.designation.name,
+                }
+                : null,
+        };
     }
     async remove(id) {
         return this.employeeService.remove(id);

@@ -1,13 +1,13 @@
 // @ts-nocheck
 
 import { DataSource } from 'typeorm';
-import { User } from './src/modules/users/user.entity';
-import { Company } from './src/modules/companies/company.entity';
-import { Role } from './src/modules/access-control/role.entity';
-import { Permission } from './src/modules/access-control/permission.entity';
-import { Department } from './src/modules/departments/department.entity';
-import { Employee } from './src/modules/employees/employee.entity';
-import { Attendance } from './src/modules/attendance/attendance.entity';
+import { User } from '../modules/users/user.entity';
+import { Company } from '../modules/companies/company.entity';
+import { Role } from '../modules/access-control/role.entity';
+import { Permission } from '../modules/access-control/permission.entity';
+import { Department } from '../modules/departments/department.entity';
+import { Employee } from '../modules/employees/employee.entity';
+import { Attendance } from '../modules/attendance/attendance.entity';
 
 require('dotenv').config();
 

@@ -38,7 +38,7 @@ export class FinanceController {
   @Post('expenses')
   @CheckAbilities({ action: Action.Create, subject: 'expense' })
   createExpense(@Request() req, @Body() data: any) {
-    return this.financeService.createExpense(data, req.user.userId);
+    return this.financeService.createExpense(data, req.user.id);
   }
 
   @Get('expenses')

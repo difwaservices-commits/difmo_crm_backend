@@ -48,9 +48,20 @@ import { AllProjectModule } from './modules/project/project.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const dbUrl = configService.get<string>('DATABASE_URL');
+        const env = configService.get<string>('NODE_ENV') || 'development';
+
+        let dbUrl: string | undefined;
+        if (env === 'production') {
+          dbUrl = configService.get<string>('DATABASE_URL_PROD');
+        } else if (env === 'development') {
+          dbUrl = configService.get<string>('DATABASE_URL_STAGING');
+        }
+        if (!dbUrl) {
+          dbUrl = configService.get<string>('DATABASE_URL');
+        }
+
         console.log(
-          'DATABASE_URL:',
+          `[Environment: ${env}] DATABASE_URL:`,
           dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set',
         );
         const entities = [

@@ -35,10 +35,26 @@ let AuthController = class AuthController {
         return this.authService.register(body);
     }
     async getProfile(req) {
-        return this.userService.findById(req.user.userId);
+        const user = await this.userService.findById(req.user.id);
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        return {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            phone: user.phone,
+            company: user.company,
+            department: user.department,
+            role: user.roles?.[0]?.name || 'Employee',
+            roles: user.roles,
+            permissions: user.permissions || [],
+        };
     }
     async updateProfile(req, body) {
-        return this.userService.updateProfile(req.user.userId, body);
+        return this.userService.updateProfile(req.user.id, body);
     }
 };
 exports.AuthController = AuthController;

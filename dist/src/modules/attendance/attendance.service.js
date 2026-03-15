@@ -25,7 +25,7 @@ let AttendanceService = class AttendanceService {
     employeeService;
     OFFICE_LAT = 26.8604896;
     OFFICE_LNG = 81.0200511;
-    MAX_DISTANCE_METERS = 100;
+    MAX_DISTANCE_METERS = 10000;
     constructor(attendanceRepository, leavesService, employeeService) {
         this.attendanceRepository = attendanceRepository;
         this.leavesService = leavesService;
@@ -54,58 +54,100 @@ let AttendanceService = class AttendanceService {
         return { hours, minutes, seconds, timeString: istString };
     }
     async checkIn(checkInDto) {
+        console.log('[AttendanceService] checkIn initiated for employeeId:', checkInDto.employeeId);
         const today = this.getISTDateString();
-        const isOnLeave = await this.leavesService.isEmployeeOnLeave(checkInDto.employeeId, today);
-        if (isOnLeave) {
-            throw new common_1.BadRequestException('Cannot check in: Employee is on approved leave today.');
+        console.log('[AttendanceService] Date:', today);
+        try {
+            const isOnLeave = await this.leavesService.isEmployeeOnLeave(checkInDto.employeeId, today);
+            console.log('[AttendanceService] isOnLeave:', isOnLeave);
+            if (isOnLeave) {
+                throw new common_1.BadRequestException('Cannot check in: Employee is on approved leave today.');
+            }
+        }
+        catch (e) {
+            console.error('[AttendanceService] Error checking leave status:', e);
+            throw e;
         }
         if (checkInDto.latitude && checkInDto.longitude) {
             const distance = this.calculateDistance(checkInDto.latitude, checkInDto.longitude, this.OFFICE_LAT, this.OFFICE_LNG);
+            console.log('[AttendanceService] Distance:', distance, 'MAX:', this.MAX_DISTANCE_METERS);
             if (distance > this.MAX_DISTANCE_METERS) {
                 throw new common_1.ForbiddenException(`You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`);
             }
         }
-        const employee = await this.employeeService.findOne(checkInDto.employeeId);
-        if (employee && employee.company && employee.company.openingTime) {
-            const ist = this.getISTTimeParts();
-            const [openHour, openMinute] = employee.company.openingTime
-                .split(':')
-                .map(Number);
-            const earliestHour = openHour - 1;
-            if (ist.hours < earliestHour) {
-                const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
-                throw new common_1.ForbiddenException(`Cannot check in before ${earliestStr} AM.`);
+        let employeeRecord = null;
+        try {
+            employeeRecord = await this.employeeService.findOne(checkInDto.employeeId);
+            if (!employeeRecord) {
+                console.log('[AttendanceService] Resolving employee by userId:', checkInDto.employeeId);
+                employeeRecord = await this.employeeService.findByUserId(checkInDto.employeeId);
+            }
+            if (!employeeRecord) {
+                console.error('[AttendanceService] No employee found for ID:', checkInDto.employeeId);
+                throw new common_1.NotFoundException('Employee not found');
+            }
+            console.log('[AttendanceService] Resolved Employee PK:', employeeRecord.id);
+            checkInDto.employeeId = employeeRecord.id;
+            if (employeeRecord.company && employeeRecord.company.openingTime) {
+                console.log('[AttendanceService] Opening Time:', employeeRecord.company.openingTime);
+                const ist = this.getISTTimeParts();
+                const [openHour, openMinute] = employeeRecord.company.openingTime
+                    .split(':')
+                    .map(Number);
+                const earliestHour = openHour - 1;
+                if (ist.hours < earliestHour) {
+                    const earliestStr = `${earliestHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
+                    throw new common_1.ForbiddenException(`Cannot check in before ${earliestStr} AM.`);
+                }
             }
         }
-        const existing = await this.attendanceRepository.findOne({
-            where: {
-                employeeId: checkInDto.employeeId,
-                date: today,
-            },
-        });
-        if (existing) {
-            throw new common_1.BadRequestException('Already checked in today');
+        catch (e) {
+            console.error('[AttendanceService] Error during employee resolution:', e);
+            throw e;
+        }
+        try {
+            const existing = await this.attendanceRepository.findOne({
+                where: {
+                    employeeId: checkInDto.employeeId,
+                    date: today,
+                },
+            });
+            console.log('[AttendanceService] Existing attendance:', !!existing);
+            if (existing) {
+                throw new common_1.BadRequestException('Already checked in today');
+            }
+        }
+        catch (e) {
+            console.error('[AttendanceService] Error checking existing attendance:', e);
+            throw e;
         }
         const ist = this.getISTTimeParts();
         const checkInTime = ist.timeString;
         let status = 'present';
-        if (employee && employee.company && employee.company.openingTime) {
-            const [openHour, openMinute] = employee.company.openingTime
-                .split(':')
-                .map(Number);
-            if (ist.hours > openHour ||
-                (ist.hours === openHour && ist.minutes > openMinute + 15)) {
-                status = 'late';
+        try {
+            const employee = await this.employeeService.findOne(checkInDto.employeeId);
+            if (employee && employee.company && employee.company.openingTime) {
+                const [openHour, openMinute] = employee.company.openingTime
+                    .split(':')
+                    .map(Number);
+                if (ist.hours > openHour ||
+                    (ist.hours === openHour && ist.minutes > openMinute + 15)) {
+                    status = 'late';
+                }
+            }
+            else {
+                const startHour = 9;
+                const startMinute = 0;
+                if (ist.hours > startHour ||
+                    (ist.hours === startHour && ist.minutes > startMinute + 15)) {
+                    status = 'late';
+                }
             }
         }
-        else {
-            const startHour = 9;
-            const startMinute = 0;
-            if (ist.hours > startHour ||
-                (ist.hours === startHour && ist.minutes > startMinute + 15)) {
-                status = 'late';
-            }
+        catch (e) {
+            console.error('[AttendanceService] Error determining status:', e);
         }
+        console.log('[AttendanceService] Status:', status);
         const attendance = this.attendanceRepository.create({
             employeeId: checkInDto.employeeId,
             date: today,
@@ -114,7 +156,16 @@ let AttendanceService = class AttendanceService {
             location: checkInDto.location,
             notes: checkInDto.notes,
         });
-        return this.attendanceRepository.save(attendance);
+        console.log('[AttendanceService] Saving attendance record...');
+        try {
+            const saved = await this.attendanceRepository.save(attendance);
+            console.log('[AttendanceService] Success! ID:', saved.id);
+            return saved;
+        }
+        catch (e) {
+            console.error('[AttendanceService] Database save error:', e);
+            throw e;
+        }
     }
     async bulkCheckIn(employeeIds, notes) {
         const results = {
@@ -194,8 +245,13 @@ let AttendanceService = class AttendanceService {
             });
         }
         if (filters?.employeeId) {
+            let targetEmployeeId = filters.employeeId;
+            const employee = await this.employeeService.findByUserId(targetEmployeeId);
+            if (employee) {
+                targetEmployeeId = employee.id;
+            }
             query.andWhere('attendance.employeeId = :employeeId', {
-                employeeId: filters.employeeId,
+                employeeId: targetEmployeeId,
             });
         }
         if (filters?.startDate && filters?.endDate) {
@@ -218,12 +274,24 @@ let AttendanceService = class AttendanceService {
     }
     async getTodayAttendance(employeeId) {
         const today = this.getISTDateString();
-        return this.attendanceRepository.findOne({
+        let attendance = await this.attendanceRepository.findOne({
             where: {
                 employeeId,
-                date: new Date(today),
+                date: today,
             },
         });
+        if (!attendance) {
+            const employee = await this.employeeService.findByUserId(employeeId);
+            if (employee) {
+                attendance = await this.attendanceRepository.findOne({
+                    where: {
+                        employeeId: employee.id,
+                        date: today,
+                    },
+                });
+            }
+        }
+        return attendance;
     }
     async getAnalytics(filters) {
         const query = this.attendanceRepository.createQueryBuilder('attendance');
@@ -234,8 +302,13 @@ let AttendanceService = class AttendanceService {
             });
         }
         if (filters?.employeeId) {
+            let targetEmployeeId = filters.employeeId;
+            const employee = await this.employeeService.findByUserId(targetEmployeeId);
+            if (employee) {
+                targetEmployeeId = employee.id;
+            }
             query.andWhere('attendance.employeeId = :employeeId', {
-                employeeId: filters.employeeId,
+                employeeId: targetEmployeeId,
             });
         }
         const total = await query.getCount();

@@ -37,14 +37,30 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {
-    return this.userService.findById(req.user.userId);
+    const user = await this.userService.findById(req.user.id);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      phone: user.phone,
+      company: user.company,
+      department: user.department,
+      role: user.roles?.[0]?.name || 'Employee',
+      roles: user.roles,
+      permissions: user.permissions || [],
+    };
   }
 
   // Update logged-in user profile
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
   async updateProfile(@Request() req, @Body() body: any) {
-    // req.user.userId comes from JwtStrategy
-    return this.userService.updateProfile(req.user.userId, body);
+    // req.user is the full User entity from JwtStrategy
+    return this.userService.updateProfile(req.user.id, body);
   }
 }

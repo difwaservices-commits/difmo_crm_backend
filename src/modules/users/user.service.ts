@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { User } from './user.entity';
 import { Role } from '../access-control/role.entity';
+import { Permission } from '../access-control/permission.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -13,6 +14,8 @@ export class UserService {
     private userRepository: Repository<User>,
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
+    @InjectRepository(Permission)
+    private permissionRepository: Repository<Permission>,
   ) {}
 
   // CREATE USER
@@ -42,7 +45,7 @@ export class UserService {
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email },
-      relations: ['company', 'roles', 'roles.permissions'],
+      relations: ['company', 'roles', 'roles.permissions', 'permissions'],
     });
   }
 
@@ -50,7 +53,7 @@ export class UserService {
   async findById(id: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id },
-      relations: ['company', 'roles', 'roles.permissions'],
+      relations: ['company', 'roles', 'roles.permissions', 'permissions', 'department'],
     });
   }
 
@@ -92,6 +95,11 @@ export class UserService {
   // FIND ROLES BY IDS
   async findRolesByIds(ids: string[]): Promise<Role[]> {
     return this.roleRepository.find({ where: { id: In(ids) } });
+  }
+
+  // FIND PERMISSIONS BY IDS
+  async findPermissionsByIds(ids: string[]): Promise<Permission[]> {
+    return this.permissionRepository.find({ where: { id: In(ids) } });
   }
 
   // ASSIGN ROLE TO USER

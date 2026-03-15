@@ -60,8 +60,18 @@ exports.AppModule = AppModule = __decorate([
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 useFactory: (configService) => {
-                    const dbUrl = configService.get('DATABASE_URL');
-                    console.log('DATABASE_URL:', dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set');
+                    const env = configService.get('NODE_ENV') || 'development';
+                    let dbUrl;
+                    if (env === 'production') {
+                        dbUrl = configService.get('DATABASE_URL_PROD');
+                    }
+                    else if (env === 'development') {
+                        dbUrl = configService.get('DATABASE_URL_STAGING');
+                    }
+                    if (!dbUrl) {
+                        dbUrl = configService.get('DATABASE_URL');
+                    }
+                    console.log(`[Environment: ${env}] DATABASE_URL:`, dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set');
                     const entities = [
                         company_entity_1.Company,
                         user_entity_1.User,

@@ -22,7 +22,7 @@ import { AbilitiesGuard } from '../access-control/abilities.guard';
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, AbilitiesGuard)
 export class AttendanceController {
-  constructor(private readonly attendanceService: AttendanceService) {}
+  constructor(private readonly attendanceService: AttendanceService) { }
 
   @Post('check-in')
   @CheckAbilities({ action: Action.Create, subject: 'attendance' })

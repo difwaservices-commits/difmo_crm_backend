@@ -15,14 +15,24 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
     const { user } = context.switchToHttp().getRequest();
-    if (!user || !user.roles) return false;
+    if (!user) return false;
 
-    const userPermissions = user.roles.flatMap((role) =>
-      role.permissions.map((p) => p.action + ':' + p.resource),
+    // Get permissions from roles
+    const rolePermissions = (user.roles || []).flatMap((role) =>
+      (role.permissions || []).map((p) => p.action + ':' + p.resource),
     );
 
-    // Check if user has all required permissions (or maybe any? usually any for roles, all for permissions? let's assume any for now or match exact string)
-    // Actually, let's assume requiredPermissions are strings like 'create:user'
+    // Get direct permissions
+    const directPermissions = (user.permissions || []).map(
+      (p) => p.action + ':' + p.resource,
+    );
+
+    // Merge all permissions
+    const userPermissions = Array.from(
+      new Set([...rolePermissions, ...directPermissions]),
+    );
+
+    // Check if user has all required permissions
     return requiredPermissions.some((permission) =>
       userPermissions.includes(permission),
     );

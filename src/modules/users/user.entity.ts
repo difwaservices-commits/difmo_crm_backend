@@ -11,6 +11,7 @@ import {
 import { Company } from '../companies/company.entity';
 import { Department } from '../departments/department.entity';
 import { Role } from '../access-control/role.entity';
+import { Permission } from '../access-control/permission.entity';
 
 @Entity()
 export class User {
@@ -46,6 +47,10 @@ export class User {
   @ManyToMany(() => Role)
   @JoinTable()
   roles: Role[];
+
+  @ManyToMany(() => Permission)
+  @JoinTable()
+  permissions: Permission[];
 
   @CreateDateColumn()
   createdAt: Date;

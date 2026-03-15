@@ -51,13 +51,16 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./user.entity");
 const role_entity_1 = require("../access-control/role.entity");
+const permission_entity_1 = require("../access-control/permission.entity");
 const bcrypt = __importStar(require("bcrypt"));
 let UserService = class UserService {
     userRepository;
     roleRepository;
-    constructor(userRepository, roleRepository) {
+    permissionRepository;
+    constructor(userRepository, roleRepository, permissionRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.permissionRepository = permissionRepository;
     }
     async create(createUserDto) {
         if (!createUserDto.password) {
@@ -77,13 +80,13 @@ let UserService = class UserService {
     async findByEmail(email) {
         return this.userRepository.findOne({
             where: { email },
-            relations: ['company', 'roles', 'roles.permissions'],
+            relations: ['company', 'roles', 'roles.permissions', 'permissions'],
         });
     }
     async findById(id) {
         return this.userRepository.findOne({
             where: { id },
-            relations: ['company', 'roles', 'roles.permissions'],
+            relations: ['company', 'roles', 'roles.permissions', 'permissions', 'department'],
         });
     }
     async update(id, data) {
@@ -115,6 +118,9 @@ let UserService = class UserService {
     async findRolesByIds(ids) {
         return this.roleRepository.find({ where: { id: (0, typeorm_2.In)(ids) } });
     }
+    async findPermissionsByIds(ids) {
+        return this.permissionRepository.find({ where: { id: (0, typeorm_2.In)(ids) } });
+    }
     async assignRole(userId, roleName) {
         const user = await this.userRepository.findOne({
             where: { id: userId },
@@ -145,7 +151,9 @@ exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __param(1, (0, typeorm_1.InjectRepository)(role_entity_1.Role)),
+    __param(2, (0, typeorm_1.InjectRepository)(permission_entity_1.Permission)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

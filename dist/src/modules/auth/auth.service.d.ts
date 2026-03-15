@@ -9,7 +9,18 @@ export declare class AuthService {
     validateUser(email: string, pass: string): Promise<any>;
     login(user: any): Promise<{
         access_token: string;
-        user: any;
+        user: {
+            id: any;
+            email: any;
+            firstName: any;
+            lastName: any;
+            name: string;
+            phone: any;
+            company: any;
+            role: any;
+            roles: any;
+            permissions: any;
+        };
     }>;
     register(data: any): Promise<{
         company: import("../companies/company.entity").Company;

@@ -22,15 +22,35 @@ export class AuthService {
   }
 
   async login(user: any) {
+    console.log('[AuthService] Generating login response for:', user.email);
+    console.log('[AuthService] User fields:', {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
+
     const payload = {
       username: user.email,
       sub: user.id,
       companyId: user.company?.id,
       roles: user.roles,
     };
+
     return {
       access_token: this.jwtService.sign(payload),
-      user: user,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        phone: user.phone,
+        company: user.company,
+        role: user.roles?.[0]?.name || 'Employee',
+        roles: user.roles,
+        permissions: user.permissions || [],
+      },
     };
   }
 

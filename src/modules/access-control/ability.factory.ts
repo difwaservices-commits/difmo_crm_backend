@@ -45,8 +45,6 @@ export class AbilityFactory {
               // Parse and replace placeholders in conditions
               let conditionsStr = permission.conditions;
 
-              // Simple template replacement for user attributes
-              // e.g. ${user.id} -> user.id value
               if (conditionsStr.includes('${user.')) {
                 const matches = conditionsStr.match(/\${user\.([^}]+)}/g);
                 if (matches) {
@@ -66,12 +64,44 @@ export class AbilityFactory {
                   `Failed to parse conditions for permission ${permission.id}:`,
                   e,
                 );
-                // Fallback: if conditions fail to parse, don't grant permission or grant without conditions if preferred
               }
             } else {
               can(action, resource);
             }
           });
+        }
+      });
+    }
+
+    // Process direct permissions
+    if (user.permissions) {
+      user.permissions.forEach((permission) => {
+        const action = permission.action as Action;
+        const resource = permission.resource;
+
+        if (permission.conditions) {
+          let conditionsStr = permission.conditions;
+          if (conditionsStr.includes('${user.')) {
+            const matches = conditionsStr.match(/\${user\.([^}]+)}/g);
+            if (matches) {
+              matches.forEach((match) => {
+                const field = match.replace('${user.', '').replace('}', '');
+                const value = user[field];
+                conditionsStr = conditionsStr.replace(match, value);
+              });
+            }
+          }
+          try {
+            const conditions = JSON.parse(conditionsStr);
+            can(action, resource, conditions);
+          } catch (e) {
+            console.error(
+              `Failed to parse conditions for direct permission ${permission.id}:`,
+              e,
+            );
+          }
+        } else {
+          can(action, resource);
         }
       });
     }

@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 const company_entity_1 = require("../companies/company.entity");
 const department_entity_1 = require("../departments/department.entity");
 const role_entity_1 = require("../access-control/role.entity");
+const permission_entity_1 = require("../access-control/permission.entity");
 let User = class User {
     id;
     email;
@@ -25,6 +26,7 @@ let User = class User {
     company;
     department;
     roles;
+    permissions;
     createdAt;
     updatedAt;
 };
@@ -72,6 +74,11 @@ __decorate([
     (0, typeorm_1.JoinTable)(),
     __metadata("design:type", Array)
 ], User.prototype, "roles", void 0);
+__decorate([
+    (0, typeorm_1.ManyToMany)(() => permission_entity_1.Permission),
+    (0, typeorm_1.JoinTable)(),
+    __metadata("design:type", Array)
+], User.prototype, "permissions", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

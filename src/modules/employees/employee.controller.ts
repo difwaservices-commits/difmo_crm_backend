@@ -44,58 +44,14 @@ export class EmployeeController {
   @CheckAbilities({ action: Action.Read, subject: 'employee' })
   async findAll(@Query() query: any) {
     const employees = await this.employeeService.findAll(query);
-
-    // CRITICAL: Transform to remove circular references (Employee -> User -> Company -> Users -> ...)
-    const transformedEmployees = employees.map((emp) => ({
-      id: emp.id,
-      userId: emp.userId,
-      companyId: emp.companyId,
-      departmentId: emp.departmentId,
-      role: emp.role,
-      hireDate: emp.hireDate,
-      salary: emp.salary,
-      manager: emp.manager,
-      branch: emp.branch,
-      employmentType: emp.employmentType,
-      status: emp.status,
-      address: emp.address,
-      emergencyContact: emp.emergencyContact,
-      emergencyPhone: emp.emergencyPhone,
-      skills: emp.skills,
-      createdAt: emp.createdAt,
-      updatedAt: emp.updatedAt,
-      user: emp.user
-        ? {
-            id: emp.user.id,
-            email: emp.user.email,
-            firstName: emp.user.firstName,
-            lastName: emp.user.lastName,
-            phone: emp.user.phone,
-            isActive: emp.user.isActive,
-          }
-        : null,
-      company: emp.company
-        ? {
-            id: emp.company.id,
-            name: emp.company.name,
-            email: emp.company.email,
-          }
-        : null,
-      department: emp.department
-        ? {
-            id: emp.department.id,
-            name: emp.department.name,
-          }
-        : null,
-    }));
-
-    return transformedEmployees;
+    return employees.map((emp) => this.transformEmployee(emp));
   }
 
   @Get(':id')
   @CheckAbilities({ action: Action.Read, subject: 'employee' })
   async findOne(@Param('id') id: string) {
-    return this.employeeService.findOne(id);
+    const employee = await this.employeeService.findOne(id);
+    return employee ? this.transformEmployee(employee) : null;
   }
 
   @Put(':id')
@@ -104,7 +60,49 @@ export class EmployeeController {
     @Param('id') id: string,
     @Body() updateEmployeeDto: UpdateEmployeeDto,
   ) {
-    return this.employeeService.update(id, updateEmployeeDto);
+    const employee = await this.employeeService.update(id, updateEmployeeDto);
+    return employee ? this.transformEmployee(employee) : null;
+  }
+
+  private transformEmployee(emp: any) {
+    return {
+      ...emp,
+      user: emp.user
+        ? {
+            id: emp.user.id,
+            email: emp.user.email,
+            firstName: emp.user.firstName,
+            lastName: emp.user.lastName,
+            name: `${emp.user.firstName || ''} ${emp.user.lastName || ''}`.trim(),
+            phone: emp.user.phone,
+            isActive: emp.user.isActive,
+            roles: emp.user.roles?.map((r) => ({
+              id: r.id,
+              name: r.name,
+              permissions: r.permissions,
+            })),
+            permissions: emp.user.permissions,
+          }
+        : null,
+      company: emp.company
+        ? {
+            id: emp.company.id,
+            name: emp.company.name,
+          }
+        : null,
+      department: emp.department
+        ? {
+            id: emp.department.id,
+            name: emp.department.name,
+          }
+        : null,
+      designation: emp.designation
+        ? {
+            id: emp.designation.id,
+            name: emp.designation.name,
+          }
+        : null,
+    };
   }
 
   @Delete(':id')

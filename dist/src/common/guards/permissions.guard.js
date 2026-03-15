@@ -24,9 +24,11 @@ let PermissionsGuard = class PermissionsGuard {
             return true;
         }
         const { user } = context.switchToHttp().getRequest();
-        if (!user || !user.roles)
+        if (!user)
             return false;
-        const userPermissions = user.roles.flatMap((role) => role.permissions.map((p) => p.action + ':' + p.resource));
+        const rolePermissions = (user.roles || []).flatMap((role) => (role.permissions || []).map((p) => p.action + ':' + p.resource));
+        const directPermissions = (user.permissions || []).map((p) => p.action + ':' + p.resource);
+        const userPermissions = Array.from(new Set([...rolePermissions, ...directPermissions]));
         return requiredPermissions.some((permission) => userPermissions.includes(permission));
     }
 };

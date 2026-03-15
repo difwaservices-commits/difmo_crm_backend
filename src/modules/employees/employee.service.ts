@@ -21,10 +21,10 @@ export class EmployeeService {
   ) { }
 
   async create(
-    createEmployeeDto: CreateEmployeeDto & { roleIds?: string[] },
+    createEmployeeDto: CreateEmployeeDto & { roleIds?: string[]; permissionIds?: string[] },
   ): Promise<Employee> {
     let userId = createEmployeeDto.userId;
-    const { roleIds, ...dto } = createEmployeeDto;
+    const { roleIds, permissionIds, ...dto } = createEmployeeDto;
 
     if (!userId && createEmployeeDto.email) {
       const existingUser = await this.userService.findByEmail(
@@ -56,11 +56,22 @@ export class EmployeeService {
     if (roleIds && roleIds.length > 0) {
       const user = await this.userService.findById(userId);
       if (user) {
-        user.roles = await this.userService.findRolesByIds(roleIds);
+        if (roleIds) {
+          user.roles = await this.userService.findRolesByIds(roleIds);
+        }
+        if (permissionIds) {
+          user.permissions = await this.userService.findPermissionsByIds(permissionIds);
+        }
+        await this.userService.saveUser(user);
+      }
+    } else if (permissionIds && permissionIds.length > 0) {
+      const user = await this.userService.findById(userId);
+      if (user) {
+        user.permissions = await this.userService.findPermissionsByIds(permissionIds);
         await this.userService.saveUser(user);
       }
     } else {
-      // Default to Employee role if no roles provided
+      // Default to Employee role if no roles/permissions provided
       await this.userService.assignRole(userId, 'Employee');
     }
 
@@ -78,22 +89,29 @@ export class EmployeeService {
 
     // Send Welcome Email
     try {
-      const company = await this.companyRepository.findOne({
-        where: { id: savedEmployee.companyId },
-      });
-      await this.mailerService.sendMail({
-        to: createEmployeeDto.email,
-        subject: `Welcome to ${company?.name || 'the Team'}!`,
-        template: './welcome',
-        context: {
-          name: `${createEmployeeDto.firstName} ${createEmployeeDto.lastName}`,
-          companyName: company?.name || 'Our Company',
-          loginUrl: 'http://localhost:5173/login', // Dynamic later
-          year: new Date().getFullYear(),
-        },
-      });
+      if (createEmployeeDto.email) {
+        const company = await this.companyRepository.findOne({
+          where: { id: savedEmployee.companyId },
+        });
+        
+        console.log(`[EmployeeService] Attempting to send welcome email to ${createEmployeeDto.email}`);
+        
+        await this.mailerService.sendMail({
+          to: createEmployeeDto.email,
+          subject: `Welcome to ${company?.name || 'the Team'}!`,
+          template: './welcome',
+          context: {
+            name: `${createEmployeeDto.firstName} ${createEmployeeDto.lastName}`,
+            companyName: company?.name || 'Our Company',
+            loginUrl: 'http://localhost:5173/login',
+            year: new Date().getFullYear(),
+          },
+        }).catch(err => {
+          console.error('[EmployeeService] Mailer Error (handled):', err.message);
+        });
+      }
     } catch (error) {
-      console.error('Failed to send welcome email:', error);
+      console.error('[EmployeeService] Critical failure in email logic (skipped):', error.message);
     }
 
     return savedEmployee;
@@ -120,6 +138,8 @@ export class EmployeeService {
       .where('employee.isDeleted = :isDeleted', { isDeleted: false })
       .leftJoinAndSelect('employee.user', 'user')
       .leftJoinAndSelect('user.roles', 'roles')
+      .leftJoinAndSelect('user.permissions', 'permissions')
+      .leftJoinAndSelect('roles.permissions', 'rolePermissions')
       .leftJoinAndSelect('employee.company', 'company')
       .leftJoinAndSelect('employee.department', 'department')
       .leftJoinAndSelect('employee.designation', 'designation');
@@ -193,7 +213,15 @@ export class EmployeeService {
   async findOne(id: string): Promise<Employee | null> {
     return this.employeeRepository.findOne({
       where: { id },
-      relations: ['user', 'company', 'department'],
+      relations: [
+        'user',
+        'user.roles',
+        'user.roles.permissions',
+        'user.permissions',
+        'company',
+        'department',
+        'designation',
+      ],
     });
   }
 
@@ -206,7 +234,13 @@ export class EmployeeService {
 
   async update(
     id: string,
-    updateEmployeeDto: UpdateEmployeeDto & { roleIds?: string[] },
+    updateEmployeeDto: UpdateEmployeeDto & {
+      roleIds?: string[];
+      permissionIds?: string[];
+      email?: string;
+      phone?: string;
+      password?: string;
+    },
   ): Promise<Employee | null> {
     console.log('[EmployeeService] Updating employee:', id, updateEmployeeDto);
     try {
@@ -216,15 +250,56 @@ export class EmployeeService {
         return null;
       }
 
-      const { roleIds, firstName, lastName, ...employeeUpdate } =
-        updateEmployeeDto;
+      const firstName = updateEmployeeDto.firstName;
+      const lastName = updateEmployeeDto.lastName;
+      const email = updateEmployeeDto.email;
+      const phone = updateEmployeeDto.phone;
+      const password = updateEmployeeDto.password;
+      const roleIds = updateEmployeeDto.roleIds;
+      const permissionIds = updateEmployeeDto.permissionIds;
+
+      // EXPLICITLY pick only Employee entity fields
+      const employeeUpdate: any = {};
+      const validFields = [
+        'companyId',
+        'departmentId',
+        'designationId',
+        'role',
+        'hireDate',
+        'salary',
+        'manager',
+        'branch',
+        'employmentType',
+        'status',
+        'address',
+        'emergencyContact',
+        'emergencyPhone',
+        'skills',
+      ];
+
+      validFields.forEach((field) => {
+        if (updateEmployeeDto[field] !== undefined) {
+          employeeUpdate[field] = updateEmployeeDto[field];
+        }
+      });
 
       // Update User details if provided
-      if (firstName || lastName || roleIds) {
+      if (
+        firstName ||
+        lastName ||
+        email ||
+        phone ||
+        password ||
+        roleIds ||
+        permissionIds
+      ) {
         if (employee.userId) {
           const userUpdate: any = {};
           if (firstName) userUpdate.firstName = firstName;
           if (lastName) userUpdate.lastName = lastName;
+          if (email) userUpdate.email = email;
+          if (phone) userUpdate.phone = phone;
+          if (password) userUpdate.password = password;
 
           const user = await this.userService.update(
             employee.userId,
@@ -233,6 +308,13 @@ export class EmployeeService {
 
           if (roleIds) {
             user.roles = await this.userService.findRolesByIds(roleIds);
+          }
+          if (permissionIds) {
+            user.permissions = await this.userService.findPermissionsByIds(
+              permissionIds,
+            );
+          }
+          if (roleIds || permissionIds) {
             await this.userService.saveUser(user);
           }
         }
