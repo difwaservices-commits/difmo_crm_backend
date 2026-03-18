@@ -130,6 +130,7 @@ export class UpdateEmployeeDto {
   @IsString()
   @IsOptional()
   emergencyContact?: string;
+  
 
   @IsString()
   @IsOptional()

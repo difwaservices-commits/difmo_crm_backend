@@ -48,6 +48,7 @@ const fcm_token_entity_1 = require("./modules/notifications/entities/fcm-token.e
 const dashboard_controller_1 = require("./modules/dashboard/dashboard.controller");
 const project_entity_2 = require("./modules/project/project.entity");
 const project_module_1 = require("./modules/project/project.module");
+const upload_module_1 = require("./modules/upload/upload.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -131,6 +132,7 @@ exports.AppModule = AppModule = __decorate([
             projects_module_1.ProjectsModule,
             project_module_1.AllProjectModule,
             notifications_module_1.NotificationsModule,
+            upload_module_1.UploadModule,
         ],
         controllers: [app_controller_1.AppController, dashboard_controller_1.DashboardController],
         providers: [app_service_1.AppService],

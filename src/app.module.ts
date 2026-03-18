@@ -39,6 +39,7 @@ import { FcmToken } from './modules/notifications/entities/fcm-token.entity';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { AllProject } from './modules/project/project.entity';
 import { AllProjectModule } from './modules/project/project.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -123,7 +124,9 @@ import { AllProjectModule } from './modules/project/project.module';
     ProjectsModule,
     AllProjectModule,
     NotificationsModule,
+    UploadModule,
   ],
+
   controllers: [AppController, DashboardController],
   providers: [AppService],
 })

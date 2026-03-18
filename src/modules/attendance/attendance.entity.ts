@@ -6,8 +6,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Employee } from '../employees/employee.entity';
+import { Payroll } from '../finance/entities/payroll.entity';
 
 @Entity()
 export class Attendance {
@@ -21,6 +23,12 @@ export class Attendance {
   @Column()
   employeeId: string;
 
+  @OneToMany(() => Payroll, (payroll) => payroll.attendance)
+  payrolls: Payroll[];
+
+  // @Column()
+  // companyId:String;
+
   @Column({ type: 'date' })
   date: Date;
 
@@ -30,8 +38,12 @@ export class Attendance {
   @Column({ type: 'time', nullable: true })
   checkOutTime: string;
 
-  @Column({ default: 'present' })
-  status: string; // present, absent, late, half-day, leave
+  @Column({
+    type: 'enum',
+    enum: ['present', 'absent', 'leave', 'half-day'],
+    default: 'present'
+  })
+  status: string;
 
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
   workHours: number;

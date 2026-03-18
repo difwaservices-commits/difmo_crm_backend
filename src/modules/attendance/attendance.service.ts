@@ -180,7 +180,7 @@ export class AttendanceService {
           ist.hours > openHour ||
           (ist.hours === openHour && ist.minutes > openMinute + 15)
         ) {
-          status = 'late';
+          
         }
       } else {
         // Default logic if no company time set
@@ -190,7 +190,7 @@ export class AttendanceService {
           ist.hours > startHour ||
           (ist.hours === startHour && ist.minutes > startMinute + 15)
         ) {
-          status = 'late';
+          
         }
       }
     } catch (e) {

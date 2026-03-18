@@ -7,12 +7,15 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
 } from '@nestjs/common';
 import { FinanceService } from './finance.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AbilitiesGuard } from '../access-control/abilities.guard';
 import { CheckAbilities } from '../access-control/abilities.decorator';
 import { Action } from '../access-control/ability.factory';
+import type { Response } from 'express';
+import { Attendance } from '../attendance/attendance.entity';
 
 @Controller('finance')
 @UseGuards(JwtAuthGuard, AbilitiesGuard)
@@ -21,18 +24,29 @@ export class FinanceController {
 
   @Post('payroll')
   @CheckAbilities({ action: Action.Create, subject: 'payroll' })
+
   createPayroll(@Body() data: any) {
+
+    console.log("🔥 BODY:", data);
     return this.financeService.createPayroll(data);
+  }
+
+
+  @Post('payroll/pay')
+  markAsPaid(@Body() body: { payrollId: string }) {
+    return this.financeService.markPayrollPaid(body.payrollId);
   }
 
   @Get('payroll')
   @CheckAbilities({ action: Action.Read, subject: 'payroll' })
   findAllPayroll(
-    @Query('companyId') companyId: string,
+    @Query('attendanceId') AttendanceId: string,
     @Query('month') month?: number,
     @Query('year') year?: number,
-  ) {
-    return this.financeService.findAllPayroll(companyId, month, year);
+  ) {``
+    console.log(" USER:", AttendanceId);
+    console.log(" BODY:", month);
+    return this.financeService.findAllPayroll(AttendanceId, month, year);
   }
 
   @Post('expenses')
@@ -48,6 +62,33 @@ export class FinanceController {
     @Query('currency') currency?: string,
   ) {
     return this.financeService.findAllExpenses(companyId, currency);
+  }
+
+@Get('payroll/:id/slip')
+async getPayrollSlip(
+  @Param('id') payrollId: string,
+  @Res({ passthrough: false }) res: Response
+) {
+  const pdfBuffer = await this.financeService.generatePayrollSlip(payrollId);
+
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename=payroll_${payrollId}.pdf`,
+  });
+
+  return res.end(pdfBuffer); //  use end instead of send
+}
+
+  @Post('generate')
+  generatePayroll(
+    @Body() body: { attendanceId: string; month: number; year: number }
+  ) {
+    return this.financeService.generatePayroll(body);
+  }
+
+  @Post('generate-single')
+  generateSingle(@Body() body: { attendanceId: string }) {
+    return this.financeService.generatePayrollSingle(body.attendanceId);
   }
 
   @Get('summary')
