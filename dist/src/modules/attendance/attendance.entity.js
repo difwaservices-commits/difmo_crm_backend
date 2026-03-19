@@ -12,12 +12,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Attendance = void 0;
 const typeorm_1 = require("typeorm");
 const employee_entity_1 = require("../employees/employee.entity");
-const payroll_entity_1 = require("../finance/entities/payroll.entity");
 let Attendance = class Attendance {
     id;
     employee;
     employeeId;
-    payrolls;
     date;
     checkInTime;
     checkOutTime;
@@ -44,10 +42,6 @@ __decorate([
     __metadata("design:type", String)
 ], Attendance.prototype, "employeeId", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => payroll_entity_1.Payroll, (payroll) => payroll.attendance),
-    __metadata("design:type", Array)
-], Attendance.prototype, "payrolls", void 0);
-__decorate([
     (0, typeorm_1.Column)({ type: 'date' }),
     __metadata("design:type", Date)
 ], Attendance.prototype, "date", void 0);
@@ -60,11 +54,7 @@ __decorate([
     __metadata("design:type", String)
 ], Attendance.prototype, "checkOutTime", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        type: 'enum',
-        enum: ['present', 'absent', 'leave', 'half-day'],
-        default: 'present'
-    }),
+    (0, typeorm_1.Column)({ default: 'present' }),
     __metadata("design:type", String)
 ], Attendance.prototype, "status", void 0);
 __decorate([

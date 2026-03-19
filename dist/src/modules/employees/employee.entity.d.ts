@@ -25,7 +25,6 @@ export declare class Employee {
     emergencyPhone: string;
     skills: string[];
     isDeleted: boolean;
-    avatar: string;
     createdAt: Date;
     updatedAt: Date;
 }

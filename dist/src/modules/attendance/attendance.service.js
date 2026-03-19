@@ -132,6 +132,7 @@ let AttendanceService = class AttendanceService {
                     .map(Number);
                 if (ist.hours > openHour ||
                     (ist.hours === openHour && ist.minutes > openMinute + 15)) {
+                    status = 'late';
                 }
             }
             else {
@@ -139,6 +140,7 @@ let AttendanceService = class AttendanceService {
                 const startMinute = 0;
                 if (ist.hours > startHour ||
                     (ist.hours === startHour && ist.minutes > startMinute + 15)) {
+                    status = 'late';
                 }
             }
         }
