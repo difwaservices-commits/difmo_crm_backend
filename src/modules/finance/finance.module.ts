@@ -8,10 +8,11 @@ import { Company } from '../companies/company.entity';
 import { Employee } from '../employees/employee.entity';
 
 import { AccessControlModule } from '../access-control/access-control.module';
+import { Attendance } from '../attendance/attendance.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payroll, Expense, Company, Employee]),
+    TypeOrmModule.forFeature([Payroll, Expense, Attendance, Company, Employee]),
     AccessControlModule
   ],
   providers: [FinanceService],

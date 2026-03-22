@@ -680,7 +680,7 @@ paths:
     get:
       operationId: FinanceController_findAllPayroll
       parameters:
-        - name: companyId
+        - name: attendanceId
           required: true
           in: query
           schema:
@@ -697,6 +697,14 @@ paths:
             type: number
       responses:
         "200":
+          description: ""
+      tags: *a10
+  /finance/payroll/pay:
+    post:
+      operationId: FinanceController_markAsPaid
+      parameters: []
+      responses:
+        "201":
           description: ""
       tags: *a10
   /finance/expenses:
@@ -722,6 +730,35 @@ paths:
             type: string
       responses:
         "200":
+          description: ""
+      tags: *a10
+  /finance/payroll/{id}/slip:
+    get:
+      operationId: FinanceController_getPayrollSlip
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a10
+  /finance/generate:
+    post:
+      operationId: FinanceController_generatePayroll
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a10
+  /finance/generate-single:
+    post:
+      operationId: FinanceController_generateSingle
+      parameters: []
+      responses:
+        "201":
           description: ""
       tags: *a10
   /finance/summary:

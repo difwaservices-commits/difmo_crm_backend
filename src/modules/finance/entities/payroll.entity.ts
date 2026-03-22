@@ -5,26 +5,31 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Company } from '../../companies/company.entity';
 import { Employee } from '../../employees/employee.entity';
-
+import { Attendance } from '../../attendance/attendance.entity';
 @Entity()
 export class Payroll {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @ManyToOne(() => Employee)
+  @JoinColumn({ name: 'employeeId' })
   employee: Employee;
 
-  @Column()
+  @Column({ type: 'uuid' })
   employeeId: string;
 
-  @ManyToOne(() => Company)
-  company: Company;
+  @ManyToOne(() => Attendance, (attendance) => attendance.payrolls, {
+    nullable: false,
+  })
+  @JoinColumn({ name: 'attendanceId' })
+  attendance: Attendance;
 
-  @Column()
-  companyId: string;
+  @Column({ type: 'uuid' })
+  attendanceId: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   basicSalary: number;
@@ -39,13 +44,25 @@ export class Payroll {
   netSalary: number;
 
   @Column()
-  month: number; // 1-12
+  month: number;
 
   @Column()
   year: number;
 
+  @Column({ type: 'int', default: 8 })
+  workingHoursPerDay: number;
+
+  @Column({ type: 'int', default: 100 })
+  overtimeRate: number;
+
+  @Column({ type: 'int', default: 4 })
+  freeLeaves: number;
+
+  @Column({ type: 'int', default: 50 })
+  halfDayPercent: number;
+
   @Column({ default: 'pending' })
-  status: string; // pending, processed, paid
+  status: string;
 
   @CreateDateColumn()
   createdAt: Date;
