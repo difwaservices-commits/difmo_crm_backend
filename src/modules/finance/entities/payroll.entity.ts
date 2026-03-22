@@ -15,6 +15,13 @@ export class Payroll {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ManyToOne(() => Company)
+  @JoinColumn({ name: 'companyId' })
+  company: Company;
+
+  @Column({ type: 'uuid', nullable: true })
+  companyId: string;
+
   @ManyToOne(() => Employee)
   @JoinColumn({ name: 'employeeId' })
   employee: Employee;

@@ -180,6 +180,7 @@ async generateMonthlyPayroll(month: number, year: number) {
     // Save payroll record
     const payroll = this.payrollRepository.create({
       employeeId: emp.id,
+      companyId: emp.companyId,
       basicSalary,
       netSalary,
       month,
@@ -279,6 +280,7 @@ async generatePayroll(payload: { attendanceId: string; month: number; year: numb
   // 6️⃣ Save payroll
   const payroll = this.payrollRepository.create({
     employeeId: emp.id,
+    companyId: emp.companyId,
     basicSalary,
     deductions: leaveDeduction + halfDeduction,
     netSalary,
@@ -318,7 +320,7 @@ async generatePayroll(payload: { attendanceId: string; month: number; year: numb
 
   return this.payrollRepository.save({
     employeeId: attendance.employeeId,
-    // companyId: attendance.companyId,
+    companyId: attendance.employee?.companyId || attendance.employeeId, // Fallback logic
     
     basicSalary: 30000,
     netSalary: 30000,
