@@ -5,6 +5,7 @@ export declare class CompanyService {
     constructor(companyRepository: Repository<Company>);
     create(companyData: Partial<Company>): Promise<Company>;
     findByEmail(email: string): Promise<Company | null>;
+    findAll(): Promise<Company[]>;
     findById(id: string): Promise<Company | null>;
     update(id: string, updateData: Partial<Company>): Promise<Company>;
 }

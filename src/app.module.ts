@@ -56,9 +56,9 @@ import { AllProjectModule } from './modules/project/project.module';
         } else if (env === 'development') {
           dbUrl = configService.get<string>('DATABASE_URL_STAGING');
         }
-        if (!dbUrl) {
-          dbUrl = configService.get<string>('DATABASE_URL');
-        }
+        // if (!dbUrl) {
+        //   dbUrl = configService.get<string>('DATABASE_URL');
+        // }
 
         console.log(
           `[Environment: ${env}] DATABASE_URL:`,

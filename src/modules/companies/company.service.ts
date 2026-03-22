@@ -20,6 +20,10 @@ export class CompanyService {
     return this.companyRepository.findOne({ where: { email } });
   }
 
+  async findAll(): Promise<Company[]> {
+    return this.companyRepository.find();
+  }
+
   async findById(id: string): Promise<Company | null> {
     return this.companyRepository.findOne({
       where: { id },

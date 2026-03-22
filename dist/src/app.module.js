@@ -68,9 +68,6 @@ exports.AppModule = AppModule = __decorate([
                     else if (env === 'development') {
                         dbUrl = configService.get('DATABASE_URL_STAGING');
                     }
-                    if (!dbUrl) {
-                        dbUrl = configService.get('DATABASE_URL');
-                    }
                     console.log(`[Environment: ${env}] DATABASE_URL:`, dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set');
                     const entities = [
                         company_entity_1.Company,

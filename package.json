@@ -19,7 +19,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:fix": "ts-node src/seed/fix-db.ts"
+    "seed:fix": "node node_modules/ts-node/dist/bin.js src/seed/fix-db.ts",
+    "seed:difmo": "node node_modules/ts-node/dist/bin.js src/seed/seed-difmo.ts",
+    "seed:difmo:prod": "NODE_ENV=production node node_modules/ts-node/dist/bin.js src/seed/seed-difmo.ts",
+    "seed:fix-passwords": "node node_modules/ts-node/dist/bin.js src/seed/fix-passwords.ts",
+    "seed:fix-passwords:prod": "NODE_ENV=production node node_modules/ts-node/dist/bin.js src/seed/fix-passwords.ts"
   },
   "dependencies": {
     "@casl/ability": "^6.8.0",

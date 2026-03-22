@@ -29,6 +29,9 @@ let CompanyService = class CompanyService {
     async findByEmail(email) {
         return this.companyRepository.findOne({ where: { email } });
     }
+    async findAll() {
+        return this.companyRepository.find();
+    }
     async findById(id) {
         return this.companyRepository.findOne({
             where: { id },

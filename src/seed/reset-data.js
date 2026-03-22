@@ -1,9 +1,9 @@
 
 const { DataSource } = require('typeorm');
-const { Employee } = require('./src/modules/employees/employee.entity');
-const { Attendance } = require('./src/modules/attendance/attendance.entity');
-const { User } = require('./src/modules/users/user.entity');
-const { Company } = require('./src/modules/companies/company.entity');
+const { Employee } = require('../modules/employees/employee.entity');
+const { Attendance } = require('../modules/attendance/attendance.entity');
+const { User } = require('../modules/users/user.entity');
+const { Company } = require('../modules/companies/company.entity');
 
 // Database configuration - assuming default local settings or reading from env
 const AppDataSource = new DataSource({

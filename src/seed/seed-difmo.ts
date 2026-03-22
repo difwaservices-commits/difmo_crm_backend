@@ -16,7 +16,28 @@ async function bootstrap() {
   const departmentService = app.get(DepartmentService);
   const accessControlService = app.get(AccessControlService);
 
+  const configService = app.get(ConfigService);
+  const env = configService.get('NODE_ENV') || 'development';
+  const dbUrl = configService.get(env === 'production' ? 'DATABASE_URL_PROD' : 'DATABASE_URL') || configService.get('DATABASE_URL');
+
   console.log('--- Starting Difmo CRM Native Seeding ---');
+  console.log(`Target Environment: ${env}`);
+  console.log(`Target Database: ${dbUrl ? dbUrl.split('@')[1] : 'Local/Unknown'}`);
+
+  // Check if data already exists
+  const allCompanies = await companyService.findAll();
+  const existingSeedUser = await userService.findByEmail('admin@difmo.com');
+  const existingSeedCompany = await companyService.findByEmail('hello@difmo.com');
+
+  if (allCompanies.length === 0) {
+    console.log('✨ Fresh start: Database is empty. Starting initial seed...');
+  } else if (existingSeedUser && existingSeedCompany) {
+    console.log('ℹ️ Database already contains seed data (Admin and Company found).');
+    console.log('--- Idempotent mode: Checking for missing records ---');
+  } else {
+    console.log(`ℹ️ Database has ${allCompanies.length} existing companies but is missing core seed data.`);
+    console.log('--- Merging seed data with existing records ---');
+  }
 
   // 1. Create Company
   let company = await companyService.findByEmail('hello@difmo.com');
