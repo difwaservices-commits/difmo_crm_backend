@@ -51,6 +51,10 @@ import { AllProjectModule } from './modules/project/project.module';
       useFactory: (configService: ConfigService) => {
         const env = configService.get<string>('NODE_ENV') || 'development';
 
+        console.log(`[APP_START] Current NODE_ENV: ${env}`);
+        console.log(`[APP_START] APP_ENV_PROD: ${process.env.DATABASE_URL_PROD ? 'exists' : 'MISSING'}`);
+        console.log(`[APP_START] APP_ENV_STAGING: ${process.env.DATABASE_URL_STAGING ? 'exists' : 'MISSING'}`);
+
         let dbUrl: string | undefined;
         if (env === 'production') {
           dbUrl = configService.get<string>('DATABASE_URL_PROD');
@@ -97,6 +101,11 @@ import { AllProjectModule } from './modules/project/project.module';
             },
           };
         }
+
+        if (env === 'production') {
+          throw new Error('DATABASE_URL is not defined in production environment!');
+        }
+
         console.log('Using SQLite Database');
         return {
           type: 'sqlite',
