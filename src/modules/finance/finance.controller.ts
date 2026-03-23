@@ -43,7 +43,8 @@ export class FinanceController {
     @Query('attendanceId') AttendanceId: string,
     @Query('month') month?: number,
     @Query('year') year?: number,
-  ) {``
+  ) {
+    ``
     console.log(" USER:", AttendanceId);
     console.log(" BODY:", month);
     return this.financeService.findAllPayroll(AttendanceId, month, year);
@@ -64,20 +65,43 @@ export class FinanceController {
     return this.financeService.findAllExpenses(companyId, currency);
   }
 
-@Get('payroll/:id/slip')
-async getPayrollSlip(
-  @Param('id') payrollId: string,
-  @Res({ passthrough: false }) res: Response
-) {
-  const pdfBuffer = await this.financeService.generatePayrollSlip(payrollId);
+  @Get('payroll/:id/slip')
+  async getPayrollSlip(
+    @Param('id') payrollId: string,
+    @Res({ passthrough: false }) res: Response
+  ) {
+    const pdfBuffer = await this.financeService.generatePayrollSlip(payrollId);
 
-  res.set({
-    'Content-Type': 'application/pdf',
-    'Content-Disposition': `attachment; filename=payroll_${payrollId}.pdf`,
-  });
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=payroll_${payrollId}.pdf`,
+    });
 
-  return res.end(pdfBuffer); //  use end instead of send
-}
+    return res.end(pdfBuffer); //  use end instead of send
+  }
+  //download slip logic in pdf format .filter by months
+  @Get('payslip')
+  async downloadSlipByMonth(
+    @Query('employeeId') employeeId: string,
+    @Query('month') month: number,
+    @Query('year') year: number,
+    @Res() res: Response
+  ) {
+
+    const pdfBuffer =
+      await this.financeService.generatePayrollSlipByMonth(
+        employeeId,
+        Number(month),
+        Number(year)
+      );
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=payslip_${month}_${year}.pdf`,
+    });
+
+    res.end(pdfBuffer);
+  }
 
   @Post('generate')
   generatePayroll(
@@ -85,6 +109,34 @@ async getPayrollSlip(
   ) {
     return this.financeService.generatePayroll(body);
   }
+
+
+
+  // Filter payrolls by employee, month & year (for employee dashboard)
+  // @Get('payroll/employee/:employeeId/filter')
+  // async getFilteredPayrolls(
+  //   @Param('employeeId') employeeId: string,
+  //   @Query('month') month?: string,
+  //   @Query('year') year?: string,
+  // ) {
+  //   // Convert query params to numbers
+  //   const monthNum = month ? parseInt(month) : undefined;
+  //   const yearNum = year ? parseInt(year) : undefined;
+
+  //   const payrolls = await this.financeService.findAllPayroll(
+  //     employeeId,
+  //     monthNum,
+  //     yearNum
+  //   );
+
+  //   return payrolls.map(p => ({
+  //     payrollId: p.id,
+  //     month: p.month,
+  //     year: p.year,
+  //     netSalary: p.netSalary,
+  //     status: p.status,
+  //   }));
+  // }
 
   @Post('generate-single')
   generateSingle(@Body() body: { attendanceId: string }) {

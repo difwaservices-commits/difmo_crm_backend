@@ -125,6 +125,7 @@ let EmployeeService = class EmployeeService {
             .leftJoinAndSelect('employee.designation', 'designation');
         if (filters?.companyId) {
             console.log('[EmployeeService] Filtering by companyId:', filters.companyId);
+            console.log("Incoming Filters:", filters);
             query.andWhere('employee.companyId = :companyId', {
                 companyId: filters.companyId,
             });

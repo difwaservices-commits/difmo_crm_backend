@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Employee } from '../employees/employee.entity';
 import { Payroll } from '../finance/entities/payroll.entity';
+import { Company } from '../companies/company.entity';  // ✅ add this
 
 @Entity()
 export class Attendance {
@@ -26,8 +27,12 @@ export class Attendance {
   @OneToMany(() => Payroll, (payroll) => payroll.attendance)
   payrolls: Payroll[];
 
-  // @Column()
-  // companyId:String;
+   @ManyToOne(() => Company)
+  @JoinColumn({ name: 'companyId' })
+  company: Company;
+
+   @Column()
+   companyId:String;
 
   @Column({ type: 'date' })
   date: Date;

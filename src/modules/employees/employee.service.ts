@@ -149,8 +149,10 @@ export class EmployeeService {
         '[EmployeeService] Filtering by companyId:',
         filters.companyId,
       );
+      console.log("Incoming Filters:", filters);
       query.andWhere('employee.companyId = :companyId', {
         companyId: filters.companyId,
+        
       });
     }
 

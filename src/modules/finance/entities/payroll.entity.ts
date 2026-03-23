@@ -31,6 +31,13 @@ export class Payroll {
   @Column({ type: 'uuid' })
   attendanceId: string;
 
+  @ManyToOne(() => Company)
+  @JoinColumn({ name: 'companyId' })
+  company: Company;
+
+  @Column({ type: 'uuid' })
+  companyId: string;
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   basicSalary: number;
 

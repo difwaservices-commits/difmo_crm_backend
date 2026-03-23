@@ -745,6 +745,29 @@ paths:
         "200":
           description: ""
       tags: *a10
+  /finance/payslip:
+    get:
+      operationId: FinanceController_downloadSlipByMonth
+      parameters:
+        - name: employeeId
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: month
+          required: true
+          in: query
+          schema:
+            type: number
+        - name: year
+          required: true
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+      tags: *a10
   /finance/generate:
     post:
       operationId: FinanceController_generatePayroll
@@ -940,15 +963,6 @@ paths:
         "200":
           description: ""
       tags: *a13
-  /upload/image:
-    post:
-      operationId: UploadController_uploadImage
-      parameters: []
-      responses:
-        "201":
-          description: ""
-      tags:
-        - Upload
 info:
   title: Difmo CRM API
   description: The Difmo CRM API description
