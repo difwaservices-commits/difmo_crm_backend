@@ -10,9 +10,14 @@ export function setupApp(app: INestApplication) {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableCors({
-    origin: true,
+    origin: [
+      'https://difmo-crm-frontend.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type,Accept,Authorization',
   });
 
   const config = new DocumentBuilder()
