@@ -870,6 +870,35 @@ paths:
       responses:
         "201":
           description: ""
+  /companies/{id}:
+    get:
+      operationId: CompaniesController_getCompany
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+    patch:
+      operationId: CompaniesController_updateDocs
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyDocsDto"
+      responses:
+        "200":
+          description: ""
 info:
   title: Difmo CRM API
   description: The Difmo CRM API description
@@ -919,5 +948,8 @@ components:
       type: object
       properties: {}
     UpdateLeaveStatusDto:
+      type: object
+      properties: {}
+    CompanyDocsDto:
       type: object
       properties: {}

@@ -12,6 +12,9 @@ import { Client } from './client.entity';
 import { Invoice } from '../invoices/invoice.entity';
 import * as nodemailer from 'nodemailer';
 import * as puppeteer from 'puppeteer';
+import { CompaniesGstService } from '../companyGstDocs/companies.Gst.service';
+// IMPORT THE SERVICE THAT HOLDS YOUR CompanyDocsGST DATA
+
 
 @Injectable()
 export class ClientsService implements OnModuleInit {
@@ -20,8 +23,9 @@ export class ClientsService implements OnModuleInit {
   constructor(
     @InjectRepository(Client) private clientRepo: Repository<Client>,
     @InjectRepository(Invoice) private invoiceRepo: Repository<Invoice>,
+    // INJECT THE GST SERVICE
+    private readonly gstService: CompaniesGstService,
   ) {
-    // Professional SMTP Configuration
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       host: 'smtp.gmail.com',
@@ -91,7 +95,7 @@ export class ClientsService implements OnModuleInit {
   }
 
   // ==========================================
-  //       ULTRA-PREMIUM PDF GENERATOR
+  //      ULTRA-PREMIUM PDF GENERATOR
   // ==========================================
 
   private async generateInvoicePdf(
@@ -99,6 +103,7 @@ export class ClientsService implements OnModuleInit {
     invoice: any,
     items: any[],
     total: number,
+    companyDocs: any, // ADDED: Dynamic data from CompanyDocsGST.jsx
     currencySymbol: string = '₹'
   ): Promise<Buffer> {
     const cgst = total * 0.09;
@@ -234,8 +239,8 @@ export class ClientsService implements OnModuleInit {
             <img src="https://image2url.com/r2/default/images/1774814179038-4873fd12-c9d3-4de0-a40f-f8ced1eb12d2.jpg">
           </div>
           <div class="brand-info">
-            <h1>DIFMO PRIVATE LIMITED</h1>
-            <p>GST: 09AALCD6467E1ZB | +91 9519202509</p>
+            <h1>${companyDocs?.companyName || 'DIFMO PRIVATE LIMITED'}</h1>
+            <p>GST: ${companyDocs?.gstNumber || 'N/A'} | +91 9519202509</p>
           </div>
         </div>
         <div class="nav-right">
@@ -287,11 +292,11 @@ export class ClientsService implements OnModuleInit {
         <div class="bottom-section">
           <div class="account-box">
             <h4>Settlement Account Details</h4>
-            <b>Bank Name:</b> Punjab National Bank (PNB)<br>
-            <b>Account Name:</b> Dinesh Kumar<br>
-            <b>Account No:</b> 5998000100026585<br>
-            <b>IFSC Code:</b> PUNB0599800<br>
-            <b>UPI ID:</b> 8853389395@ptsbi
+            <b>Bank Name:</b> ${companyDocs?.bankName || 'N/A'}<br>
+            <b>Account Name:</b> ${companyDocs?.accountName || 'N/A'}<br>
+            <b>Account No:</b> ${companyDocs?.accountNumber || 'N/A'}<br>
+            <b>IFSC Code:</b> ${companyDocs?.ifscCode || 'N/A'}<br>
+            <b>PAN Number:</b> ${companyDocs?.panNumber || 'N/A'}
           </div>
           
           <div class="calculation-box">
@@ -335,9 +340,12 @@ export class ClientsService implements OnModuleInit {
   //      CORE ACTION: DISPATCH INVOICE
   // ==========================================
 
-  async sendInvoice(clientId: string, invoiceData: any) {
+  async sendInvoice(clientId: string, invoiceData: any, companyId: string) {
     const client = await this.clientRepo.findOneBy({ id: clientId });
     if (!client) throw new NotFoundException('Client reference missing');
+
+    // FETCH THE DYNAMIC DETAILS FROM DATABASE
+    const companyDocs = await this.gstService.findOne(companyId);
 
     const items = invoiceData.items || [];
     const baseAmount = parseFloat(invoiceData.total || 0);
@@ -359,6 +367,7 @@ export class ClientsService implements OnModuleInit {
         savedInvoice, 
         items, 
         baseAmount, 
+        companyDocs, // DYNAMIC DATA FROM GST STORE
         currencySymbol
       );
 
@@ -373,7 +382,7 @@ export class ClientsService implements OnModuleInit {
             </div>
             <div style="padding: 40px; color: #1f2937;">
               <p style="font-size: 16px;">Hello <b>${client.name}</b>,</p>
-              <p>The billing department of <b>DIFMO Private Limited</b> has issued a new invoice for your ongoing project services.</p>
+              <p>The billing department of <b>${companyDocs?.companyName || 'DIFMO Private Limited'}</b> has issued a new invoice for your ongoing project services.</p>
               
               <div style="background: #f9fafb; border-radius: 12px; padding: 25px; margin: 30px 0; border: 1px solid #e5e7eb;">
                 <table style="width: 100%;">
@@ -388,13 +397,21 @@ export class ClientsService implements OnModuleInit {
                 </table>
               </div>
 
+              <div style="background: #fff9f5; border: 1px solid #ffedd5; padding: 20px; border-radius: 10px; margin-bottom: 25px;">
+                <h4 style="margin: 0 0 10px 0; color: #f97316; font-size: 14px; text-transform: uppercase;">Payment Settlement Details</h4>
+                <p style="margin: 4px 0; font-size: 13px;"><b>Bank:</b> ${companyDocs?.bankName}</p>
+                <p style="margin: 4px 0; font-size: 13px;"><b>Account Name:</b> ${companyDocs?.accountName}</p>
+                <p style="margin: 4px 0; font-size: 13px;"><b>Account No:</b> ${companyDocs?.accountNumber}</p>
+                <p style="margin: 4px 0; font-size: 13px;"><b>IFSC Code:</b> ${companyDocs?.ifscCode}</p>
+              </div>
+
               <p>We have attached the detailed PDF invoice containing the service breakdown and secure payment instructions.</p>
               <p><b>Note:</b> For any billing queries, please contact us at <a href="mailto:billing@difmo.com">billing@difmo.com</a>.</p>
               
               <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af;">
                 Best Regards,<br>
                 <b>Finance & Billing Team</b><br>
-                DIFMO Private Limited | Lucknow, UP
+                ${companyDocs?.companyName || 'DIFMO Private Limited'} | Lucknow, UP
               </div>
             </div>
           </div>

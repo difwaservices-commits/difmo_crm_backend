@@ -44,6 +44,8 @@ import { Client as CRMClient} from './modules/clients/client.entity';
 // import { UploadModule } from './modules/upload/upload.module';
 import { Client  } from './modules/projects/entities/client.entity';
 import { Invoice } from './modules/invoices/invoice.entity';
+import { CompaniesModule } from './modules/companyGstDocs/copmanies.Gst.modules';
+import { CompanyGst } from './modules/companyGstDocs/company.Gst.entity';
 
 @Module({
   imports: [
@@ -95,6 +97,7 @@ import { Invoice } from './modules/invoices/invoice.entity';
           FcmToken,
          CRMClient,
          Invoice,
+         CompanyGst,
         ];
         if (dbUrl) {
           return {
@@ -140,6 +143,7 @@ import { Invoice } from './modules/invoices/invoice.entity';
     NotificationsModule,
     ClientsModule,
     // UploadModule,
+    CompaniesModule,
   ],
 
   controllers: [AppController, DashboardController],

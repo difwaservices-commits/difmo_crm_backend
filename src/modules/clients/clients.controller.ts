@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, BadRequestException, Request, UseGuards } from '@nestjs/common';
 import { ClientsService } from './clients.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('api/clients')
 export class ClientsController {
@@ -14,12 +15,22 @@ export class ClientsController {
   createClient(@Body() clientData: any) {
     return this.clientsService.create(clientData);
   }
+@UseGuards(JwtAuthGuard)
+ @Post(':id/send-invoice')
+async sendInvoice(
+  @Param('id') id: string,
+  @Body() invoiceData: any, 
+  @Request() req: any 
+) {
+  // 1. Extract companyId from the authenticated user
+  // (Usually attached by your AuthGuard/JWT Strategy)
+  const companyId = req.user?.companyId || req.user?.company?.id;
 
-  @Post(':id/send-invoice')
-  async sendInvoice(
-    @Param('id') id: string,
-    @Body() invoiceData: any, // Frontend se pura object aa raha hai
-  ) {
-    return this.clientsService.sendInvoice(id, invoiceData);
+  if (!companyId) {
+    throw new BadRequestException('Company context not found for this user');
   }
+
+  // 2. Pass all THREE arguments to the service
+  return this.clientsService.sendInvoice(id, invoiceData, companyId);
+}
 }
