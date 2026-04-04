@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
+import { Employee } from '../employees/employee.entity';
 
 @Entity('add-projects')
 export class AllProject {
@@ -10,6 +11,11 @@ export class AllProject {
 
   @Column({ nullable: true })
   githubLink: string;
+
+  // Project.entity.ts mein dekho
+@ManyToMany(() => Employee)
+@JoinTable()
+assignedEmployees: Employee[];
 
   @Column()
   clientName: string;

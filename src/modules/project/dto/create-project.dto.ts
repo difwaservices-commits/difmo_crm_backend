@@ -19,6 +19,8 @@ export class CreateProjectDto {
 
   @IsString()
   contactInfo: string;
+  
+  
 
   @IsOptional()
   @IsDateString()

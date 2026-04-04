@@ -6,8 +6,11 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Company } from '../../companies/company.entity';
+import { Employee } from 'src/modules/employees/employee.entity';
 
 @Entity()
 export class Client {
@@ -22,6 +25,11 @@ export class Client {
 
   @Column({ nullable: true })
   phone: string;
+
+  // Project.entity.ts mein dekho
+@ManyToMany(() => Employee)
+@JoinTable()
+assignedEmployees: Employee[];
 
   @Column({ nullable: true })
   companyName: string;
