@@ -28,7 +28,7 @@ export class AuthController {
     return this.authService.login(user);
   }
 
-
+//register endpoint that allows new users to create an account. It accepts user details in the request body and uses the AuthService to create a new user record in the database. The implementation of the registration logic (e.g., hashing passwords, validating input) would be handled within the AuthService.
   @Post('register')
   async register(@Body() body: any) {
     return this.authService.register(body);
