@@ -37,15 +37,25 @@ export class FinanceController {
     return this.financeService.markPayrollPaid(body.payrollId);
   }
 
- @Get('payroll')
+// FinanceController.ts
+@Get('payroll')
 @CheckAbilities({ action: Action.Read, subject: 'payroll' })
 findAllPayroll(
-  @Query('employeeId') employeeId: string, // Match with frontend
+  @Query('employeeId') employeeId?: string,
+  @Query('companyId') companyId?: string, // 👈 Admin ke liye ye add kiya
   @Query('month') month?: number,
   @Query('year') year?: number,
+  @Request() req?: any 
 ) {
-  return this.financeService.findAllPayroll(employeeId, month, year);
+  // LOGIC: Agar na employeeId hai na companyId, toh logged-in user (Employee) ka data dikhao
+  if (!employeeId && !companyId) {
+      employeeId = req.user.employeeId || req.user.id;
+  }
+  
+  // Ab service ko 4 arguments bhejo
+  return this.financeService.findAllPayroll(employeeId, month, year, companyId);
 }
+
 
   @Post('expenses')
   @CheckAbilities({ action: Action.Create, subject: 'expense' })

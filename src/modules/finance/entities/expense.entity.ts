@@ -21,7 +21,7 @@ export class Expense {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'float',default: 0})
   amount: number;
 
   @Column()

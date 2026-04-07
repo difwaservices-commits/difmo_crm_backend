@@ -38,16 +38,16 @@ export class Payroll {
   @Column({ type: 'uuid', nullable: true })
   attendanceId: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'float', default: 0 })
   basicSalary: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'float', default: 0 })
   allowances: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'float',  default: 0 })
   deductions: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'float', default: 0})
   netSalary: number;
 
   @Column()

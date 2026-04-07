@@ -35,14 +35,14 @@ async function fixPassword() {
             const hashedPassword = await bcrypt.hash('Welcome123!', 10);
             user.password = hashedPassword;
             await userRepo.save(user);
-            console.log('✅ Password hashed and saved successfully!');
+            console.log(' Password hashed and saved successfully!');
         } else {
-            console.log('❌ User not found');
+            console.log('User not found');
         }
 
         await AppDataSource.destroy();
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error(' Error:', error);
     }
 }
 

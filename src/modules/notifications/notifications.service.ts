@@ -261,6 +261,56 @@ export class NotificationsService {
         return { total, sent, failed };
     }
 
+    // notifications.service.ts ke andar...
+
+/**
+ * 1. Leave Apply: Employee -> Admin Notification
+ */
+// async notifyAdminForLeave(employeeName: string, companyId: string) {
+//     const title = 'New Leave Application';
+//     const message = `${employeeName} ne leave apply ki hai. Kripya review karein.`;
+
+//     // 1. Pehle Admin(s) ko dhoondo (Custom logic: usually role 'admin' wale users)
+//     const admins = await this.userRepo.find({ 
+//         where: { role: 'admin', employee: { companyId } },
+//         relations: ['employee']
+//     });
+
+//     for (const admin of admins) {
+//         // Real-time Socket Notification
+//         this.gateway.sendNotificationToUser(admin.id, { title, message, type: 'leave' });
+        
+//         // Save to DB (Optional: agar history chahiye)
+//         await this.notificationRepo.save({
+//             title,
+//             message,
+//             companyId,
+//             recipientIds: [admin.id],
+//             status: 'sent'
+//         });
+//     }
+// }
+
+// /**
+//  * 2. Payroll Generate: Admin -> Employee Notification
+//  */
+// async notifyEmployeeForPayroll(userId: string, month: number, year: number, companyId: string) {
+//     const title = 'Payroll Generated';
+//     const message = `Aapka ${month}/${year} ka payroll generate ho gaya hai. Aap dashboard par slip dekh sakte hain.`;
+
+//     // Real-time Socket Notification
+//     this.gateway.sendNotificationToUser(userId, { title, message, type: 'payroll' });
+
+//     // Save to DB
+//     await this.notificationRepo.save({
+//         title,
+//         message,
+//         companyId,
+//         recipientIds: [userId],
+//         status: 'sent'
+//     });
+// }
+
     async getAllEmployees(companyId: string) {
         return this.employeeRepo.find({
             where: { companyId, status: 'active' },
