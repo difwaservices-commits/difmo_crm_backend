@@ -18,7 +18,7 @@ export class AuthController {
     private authService: AuthService,
     private userService: UserService,
   ) {}
-
+//login endpoint that validates the user's credentials and returns a JWT token if valid. It uses the AuthService to perform the validation and token generation. If the credentials are invalid, it throws an UnauthorizedException.
   @Post('login')
   async login(@Body() req) {
     const user = await this.authService.validateUser(req.email, req.password);
@@ -28,7 +28,7 @@ export class AuthController {
     return this.authService.login(user);
   }
 
-
+//register endpoint that allows new users to create an account. It accepts user details in the request body and uses the AuthService to create a new user record in the database. The implementation of the registration logic (e.g., hashing passwords, validating input) would be handled within the AuthService.
   @Post('register')
   async register(@Body() body: any) {
     return this.authService.register(body);
