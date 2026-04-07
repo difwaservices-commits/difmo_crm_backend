@@ -10,7 +10,10 @@ async function bootstrap() {
 
   // ✅ ADD THIS
   app.enableCors({
-    origin: "https://difmo-crm-frontend.vercel.app",
+    origin: [
+      "https://difmo-crm-frontend.vercel.app",
+      "http://localhost:5173" // ✅ local frontend
+    ],
     credentials: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     allowedHeaders: "Content-Type, Authorization",
