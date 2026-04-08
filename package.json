@@ -23,7 +23,9 @@
     "seed:difmo": "node node_modules/ts-node/dist/bin.js src/seed/seed-difmo.ts",
     "seed:difmo:prod": "NODE_ENV=production node node_modules/ts-node/dist/bin.js src/seed/seed-difmo.ts",
     "seed:fix-passwords": "node node_modules/ts-node/dist/bin.js src/seed/fix-passwords.ts",
-    "seed:fix-passwords:prod": "NODE_ENV=production node node_modules/ts-node/dist/bin.js src/seed/fix-passwords.ts"
+    "seed:fix-passwords:prod": "NODE_ENV=production node node_modules/ts-node/dist/bin.js src/seed/fix-passwords.ts",
+    "seed:reset-passwords": "node node_modules/ts-node/dist/bin.js src/seed/reset-passwords-selective.ts",
+    "seed:reset-passwords:prod": "NODE_ENV=production node node_modules/ts-node/dist/bin.js src/seed/reset-passwords-selective.ts"
   },
   "dependencies": {
     "@casl/ability": "^6.8.0",
@@ -47,6 +49,8 @@
     "class-validator": "^0.14.3",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
+    "firebase": "^12.11.0",
+    "firebase-admin": "^13.7.0",
     "fix": "^0.0.3",
     "handlebars": "^4.7.8",
     "mongoose": "^8.20.1",

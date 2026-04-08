@@ -2,33 +2,36 @@ import {
     Injectable,
     Logger,
     BadRequestException,
+    OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Like } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Notification } from './entities/notification.entity';
 import { FcmToken } from './entities/fcm-token.entity';
 import { Employee } from '../employees/employee.entity';
 import { User } from '../users/user.entity';
 import { ConfigService } from '@nestjs/config';
+import * as admin from 'firebase-admin';
+import { NotificationsGateway } from './notifications.gateway';
 
 export interface SendNotificationDto {
     title: string;
     message: string;
-    type: 'email' | 'push' | 'both';
-    recipientFilter: 'all' | 'country' | 'employees' | 'custom' | 'clients';
+    type: 'email' | 'push' | 'both' | 'realtime';
+    recipientFilter: 'all' | 'country' | 'employees' | 'custom' | 'clients' | 'admin';
     recipientIds?: string[];
     recipientEmails?: string[];
     recipientCountry?: string;
     companyId: string;
-    sentById: string;
+    sentById?: string;
+    metadata?: any;
 }
 
-import { NotificationsGateway } from './notifications.gateway';
-
 @Injectable()
-export class NotificationsService {
+export class NotificationsService implements OnModuleInit {
     private readonly logger = new Logger(NotificationsService.name);
+    private firestore: admin.firestore.Firestore;
 
     constructor(
         @InjectRepository(Notification)
@@ -44,10 +47,27 @@ export class NotificationsService {
         private readonly gateway: NotificationsGateway,
     ) { }
 
+    onModuleInit() {
+        this.initializeFirebase();
+    }
+
+    private initializeFirebase() {
+        try {
+            if (!admin.apps.length) {
+                admin.initializeApp({
+                    projectId: this.configService.get('FIREBASE_PROJECT_ID'),
+                });
+                this.logger.log('Firebase Admin initialized successfully');
+            }
+            this.firestore = admin.firestore();
+        } catch (error) {
+            this.logger.error('Failed to initialize Firebase Admin:', error.message);
+        }
+    }
+
     // ─── FCM Token Management ────────────────────────────────────────────────────
 
     async saveFcmToken(userId: string, token: string, platform = 'web', deviceId?: string) {
-        // Upsert: if token already exists for user, update it
         const existing = await this.fcmTokenRepo.findOne({ where: { userId, platform } });
         if (existing) {
             existing.token = token;
@@ -66,7 +86,125 @@ export class NotificationsService {
         return this.fcmTokenRepo.find({ where: { userId } });
     }
 
-    // ─── Recipient Resolution ────────────────────────────────────────────────────
+    // ─── Send Notification to Firestore (Real-time) ─────────────────────────────
+
+    private async sendToFirestore(userIds: string[], title: string, message: string, metadata: any = {}) {
+        if (!this.firestore) {
+            this.logger.warn('Firestore not initialized, skipping real-time sync.');
+            return;
+        }
+
+        const batch = this.firestore.batch();
+        const timestamp = admin.firestore.FieldValue.serverTimestamp();
+
+        userIds.forEach(userId => {
+            if (!userId) return;
+            const docRef = this.firestore.collection('notifications').doc();
+            batch.set(docRef, {
+                userId,
+                title,
+                message,
+                read: false,
+                timestamp,
+                type: metadata?.type || 'system',
+                priority: metadata?.priority || 'medium',
+                ...metadata
+            });
+        });
+
+        try {
+            await batch.commit();
+            this.logger.log(`[FirestoreSync] Successfully committed batch for ${userIds.length} users. Collection: 'notifications'`);
+            this.logger.debug(`[FirestoreSync] Targeted User IDs: ${userIds.join(', ')}`);
+        } catch (error) {
+            this.logger.error(`[FirestoreSync] CRITICAL: Failed to commit Firestore batch: ${error.message}`);
+        }
+    }
+
+    // ─── Email Templates ─────────────────────────────────────────────────────────
+
+    private getEmailTemplate(type: string, title: string, message: string, metadata: any = {}): string {
+        const logoUrl = 'https://via.placeholder.com/150?text=Difmo+CRM'; 
+        const appUrl = this.configService.get('APP_URL') || 'http://localhost:3000';
+        const baseStyle = `
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+        `;
+        const headerStyle = `
+            background-color: #4f46e5;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        `;
+        const bodyStyle = `padding: 30px; background-color: #ffffff;`;
+        const footerStyle = `
+            background-color: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+        `;
+
+        let content = `<p>${message}</p>`;
+
+        if (type === 'LEAVE_STATUS') {
+            const statusColor = metadata.status === 'APPROVED' ? '#10b981' : '#ef4444';
+            content = `
+                <div style="border-left: 4px solid ${statusColor}; padding-left: 15px; margin: 20px 0;">
+                    <h3 style="color: ${statusColor}; margin-top: 0;">Leave ${metadata.status}</h3>
+                    <p>${message}</p>
+                    ${metadata.comment ? `<p><strong>Admin Note:</strong> ${metadata.comment}</p>` : ''}
+                </div>
+                <div style="margin-top: 20px;">
+                    <a href="${appUrl}/employee/leaves" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">View Leave History</a>
+                </div>
+            `;
+        } else if (type === 'PAYROLL_GENERATED') {
+            content = `
+                <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #111827;">Payslip Available: ${metadata.month}/${metadata.year}</h3>
+                    <p style="font-size: 24px; font-weight: bold; color: #4f46e5; margin: 10px 0;">₹${metadata.netSalary?.toFixed(2)}</p>
+                    <p style="margin-bottom: 0;">Your payroll for the month of ${metadata.month} has been successfully processed.</p>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="${appUrl}/employee/payroll" style="background-color: #10b981; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Download Payslip</a>
+                </div>
+            `;
+        } else if (type === 'TASK_ASSIGNED') {
+            content = `
+                <div style="border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <span style="background-color: #fee2e2; color: #ef4444; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase;">${metadata.priority || 'NORMAL'}</span>
+                    <h3 style="margin: 10px 0; color: #111827;">${title}</h3>
+                    <p style="color: #4b5563;">${message}</p>
+                </div>
+                <div style="margin-top: 20px;">
+                    <a href="${appUrl}/task-management" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">View Task Details</a>
+                </div>
+            `;
+        }
+
+        return `
+            <div style="${baseStyle}">
+                <div style="${headerStyle}">
+                    <img src="${logoUrl}" alt="Difmo CRM" style="height: 40px; margin-bottom: 10px;">
+                    <h1 style="margin: 0; font-size: 20px;">Difmo CRM Notifications</h1>
+                </div>
+                <div style="${bodyStyle}">
+                    ${content}
+                </div>
+                <div style="${footerStyle}">
+                    <p>&copy; ${new Date().getFullYear()} Difmo Project CRM. All rights reserved.</p>
+                    <p>You received this email because it's linked to your account at Difmo CRM.</p>
+                </div>
+            </div>
+        `;
+    }
 
     private async resolveRecipients(dto: SendNotificationDto): Promise<{ emails: string[]; userIds: string[] }> {
         const emails: string[] = [];
@@ -82,7 +220,6 @@ export class NotificationsService {
                 if (emp.userId) userIds.push(emp.userId);
             }
         } else if (dto.recipientFilter === 'country') {
-            // Filter by country stored on user or branch field
             const employees = await this.employeeRepo.find({
                 where: { companyId: dto.companyId, status: 'active' },
                 relations: ['user'],
@@ -96,114 +233,56 @@ export class NotificationsService {
                     if (emp.userId) userIds.push(emp.userId);
                 }
             }
-        } else if (dto.recipientFilter === 'employees') {
-            if (dto.recipientIds?.length) {
-                const employees = await this.employeeRepo.find({
-                    where: { id: In(dto.recipientIds) },
-                    relations: ['user'],
-                });
-                for (const emp of employees) {
-                    if (emp.user?.email) emails.push(emp.user.email);
-                    if (emp.userId) userIds.push(emp.userId);
-                }
+        } else if (dto.recipientFilter === 'admin') {
+            const admins = await this.userRepo.createQueryBuilder('user')
+                .leftJoinAndSelect('user.roles', 'role')
+                .where('user.companyId = :companyId', { companyId: dto.companyId })
+                .andWhere('LOWER(role.name) IN (:...roleNames)', { roleNames: ['admin', 'super admin', 'superadmin'] })
+                .getMany();
+            
+            this.logger.log(`Found ${admins.length} admins to notify for company ${dto.companyId}`);
+            for (const admin of admins) {
+                if (admin.email) emails.push(admin.email);
+                userIds.push(admin.id);
             }
-        } else if (dto.recipientFilter === 'custom' || dto.recipientFilter === 'clients') {
-            // Custom: direct email addresses
-            if (dto.recipientEmails?.length) {
-                emails.push(...dto.recipientEmails);
-            }
+        } else if (dto.recipientIds?.length) {
+            this.logger.debug(`Resolving recipients by explicit IDs: ${dto.recipientIds.join(', ')}`);
+            userIds.push(...dto.recipientIds);
+            const users = await this.userRepo.find({ where: { id: In(dto.recipientIds) } });
+            emails.push(...users.map(u => u.email).filter(Boolean));
         }
 
-        return { emails: [...new Set(emails)], userIds: [...new Set(userIds)] };
+        const uniqueEmails = [...new Set(emails)];
+        const uniqueUserIds = [...new Set(userIds)];
+        this.logger.log(`Resolved recipients: ${uniqueUserIds.length} users, ${uniqueEmails.length} emails`);
+        return { emails: uniqueEmails, userIds: uniqueUserIds };
     }
 
     // ─── Send Email ──────────────────────────────────────────────────────────────
 
-    private async sendEmails(emails: string[], title: string, message: string): Promise<{ success: number; failure: number }> {
+    private async sendEmails(emails: string[], title: string, message: string, metadata: any = {}): Promise<{ success: number; failure: number }> {
         let success = 0;
         let failure = 0;
 
         for (const email of emails) {
             try {
+                const htmlContent = this.getEmailTemplate(metadata.type, title, message, metadata);
                 await this.mailerService.sendMail({
                     to: email,
                     subject: title,
-                    html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9fafb; border-radius: 12px;">
-              <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 22px;">${title}</h1>
-              </div>
-              <div style="background: white; padding: 24px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb;">
-                <p style="color: #374151; font-size: 15px; line-height: 1.7; margin: 0;">${message.replace(/\n/g, '<br/>')}</p>
-              </div>
-              <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 16px;">Sent via CRM Notification System</p>
-            </div>
-          `,
+                    html: htmlContent,
                 });
                 success++;
             } catch (err) {
-                this.logger.error(`Failed to send email to ${email}: ${err.message}`);
+                this.logger.error(`Failed to send email to ${email}: ${err?.message || err}`);
+                this.logger.debug(err);
                 failure++;
             }
         }
         return { success, failure };
     }
 
-    // ─── Send FCM Push Notification ──────────────────────────────────────────────
-
-    private async sendPushNotifications(userIds: string[], title: string, message: string): Promise<{ success: number; failure: number }> {
-        const fcmServerKey = this.configService.get('FCM_SERVER_KEY');
-        if (!fcmServerKey) {
-            this.logger.warn('FCM_SERVER_KEY not set. Skipping push notifications.');
-            return { success: 0, failure: 0 };
-        }
-
-        const tokens = await this.fcmTokenRepo.find({
-            where: { userId: In(userIds) },
-        });
-
-        if (!tokens.length) return { success: 0, failure: 0 };
-
-        let success = 0;
-        let failure = 0;
-
-        // Send via FCM HTTP v1 API
-        for (const tokenRecord of tokens) {
-            try {
-                const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `key=${fcmServerKey}`,
-                    },
-                    body: JSON.stringify({
-                        to: tokenRecord.token,
-                        notification: { title, body: message },
-                        data: { title, message, timestamp: new Date().toISOString() },
-                    }),
-                });
-
-                const result = await response.json() as any;
-                if (result.success === 1) {
-                    success++;
-                } else {
-                    failure++;
-                    // If token is invalid, remove it
-                    if (result.results?.[0]?.error === 'InvalidRegistration' ||
-                        result.results?.[0]?.error === 'NotRegistered') {
-                        await this.fcmTokenRepo.delete(tokenRecord.id);
-                    }
-                }
-            } catch (err) {
-                this.logger.error(`FCM send failed: ${err.message}`);
-                failure++;
-            }
-        }
-
-        return { success, failure };
-    }
-
-    // ─── Main Send Method ─────────────────────────────────────────────────────────
+    // ─── Unified Send Method (Firestore + Email + Socket) ────────────────────────
 
     async send(dto: SendNotificationDto): Promise<Notification> {
         const { emails, userIds } = await this.resolveRecipients(dto);
@@ -212,6 +291,7 @@ export class NotificationsService {
             throw new BadRequestException('No recipients found for the selected filter.');
         }
 
+        // 1. Save to SQL Database (History)
         const notification = this.notificationRepo.create({
             title: dto.title,
             message: dto.message,
@@ -219,29 +299,30 @@ export class NotificationsService {
             recipientFilter: dto.recipientFilter,
             recipientIds: userIds,
             recipientEmails: emails,
-            recipientCountry: dto.recipientCountry,
             companyId: dto.companyId,
             sentById: dto.sentById,
-            status: 'pending',
+            status: 'sent',
         });
         await this.notificationRepo.save(notification);
 
-        let emailResult = { success: 0, failure: 0 };
-        let pushResult = { success: 0, failure: 0 };
+        // 2. Real-time Firestore Sync (Powers the dynamic dashboard)
+        await this.sendToFirestore(userIds, dto.title, dto.message, dto.metadata);
 
+        // 3. Nodemailer Email Alerts
         if (dto.type === 'email' || dto.type === 'both') {
-            emailResult = await this.sendEmails(emails, dto.title, dto.message);
-        }
-        if (dto.type === 'push' || dto.type === 'both') {
-            pushResult = await this.sendPushNotifications(userIds, dto.title, dto.message);
+            await this.sendEmails(emails, dto.title, dto.message, dto.metadata);
         }
 
-        notification.successCount = emailResult.success + pushResult.success;
-        notification.failureCount = emailResult.failure + pushResult.failure;
-        notification.status = notification.failureCount === 0 ? 'sent' : 'partial';
-        if (notification.successCount === 0) notification.status = 'failed';
+        // 4. Instant Socket.io Toast (Optional background feedback)
+        userIds.forEach(id => {
+            this.gateway.sendNotificationToUser(id, {
+                title: dto.title,
+                message: dto.message,
+                ...dto.metadata
+            });
+        });
 
-        return this.notificationRepo.save(notification);
+        return notification;
     }
 
     // ─── History ──────────────────────────────────────────────────────────────────
@@ -249,72 +330,79 @@ export class NotificationsService {
     async getHistory(companyId: string): Promise<Notification[]> {
         return this.notificationRepo.find({
             where: { companyId },
-            relations: ['sentBy'],
             order: { createdAt: 'DESC' },
+            take: 100,
         });
+    }
+
+    // ─── Direct User Notifications (SQL Fallback) ─────────────────────────────────
+    async getUserNotifications(userId: string): Promise<Notification[]> {
+        // Querying simple-array using LIKE to bypass complex JSON/Array Postgres specific paths
+        return this.notificationRepo
+            .createQueryBuilder('n')
+            .where('n.recipientIds LIKE :userId', { userId: `%${userId}%` })
+            .orderBy('n.createdAt', 'DESC')
+            .limit(30)
+            .getMany();
     }
 
     async getStats(companyId: string) {
         const total = await this.notificationRepo.count({ where: { companyId } });
-        const sent = await this.notificationRepo.count({ where: { companyId, status: 'sent' } });
-        const failed = await this.notificationRepo.count({ where: { companyId, status: 'failed' } });
-        return { total, sent, failed };
+        return { total };
     }
-
-    // notifications.service.ts ke andar...
-
-/**
- * 1. Leave Apply: Employee -> Admin Notification
- */
-// async notifyAdminForLeave(employeeName: string, companyId: string) {
-//     const title = 'New Leave Application';
-//     const message = `${employeeName} ne leave apply ki hai. Kripya review karein.`;
-
-//     // 1. Pehle Admin(s) ko dhoondo (Custom logic: usually role 'admin' wale users)
-//     const admins = await this.userRepo.find({ 
-//         where: { role: 'admin', employee: { companyId } },
-//         relations: ['employee']
-//     });
-
-//     for (const admin of admins) {
-//         // Real-time Socket Notification
-//         this.gateway.sendNotificationToUser(admin.id, { title, message, type: 'leave' });
-        
-//         // Save to DB (Optional: agar history chahiye)
-//         await this.notificationRepo.save({
-//             title,
-//             message,
-//             companyId,
-//             recipientIds: [admin.id],
-//             status: 'sent'
-//         });
-//     }
-// }
-
-// /**
-//  * 2. Payroll Generate: Admin -> Employee Notification
-//  */
-// async notifyEmployeeForPayroll(userId: string, month: number, year: number, companyId: string) {
-//     const title = 'Payroll Generated';
-//     const message = `Aapka ${month}/${year} ka payroll generate ho gaya hai. Aap dashboard par slip dekh sakte hain.`;
-
-//     // Real-time Socket Notification
-//     this.gateway.sendNotificationToUser(userId, { title, message, type: 'payroll' });
-
-//     // Save to DB
-//     await this.notificationRepo.save({
-//         title,
-//         message,
-//         companyId,
-//         recipientIds: [userId],
-//         status: 'sent'
-//     });
-// }
 
     async getAllEmployees(companyId: string) {
         return this.employeeRepo.find({
             where: { companyId, status: 'active' },
             relations: ['user'],
         });
+    }
+
+    // ─── Interaction Logic ──────────────────────────────────────────────────────
+
+    async markAllAsRead(userId: string) {
+        // 1. Update SQL Database
+        // Note: For simplicity, we are updating the recipientIds JSON array matching logic
+        // In a real high-scale app, you'd have a join table for read status.
+        // For this MVP, we focus on the real-time Firestore sync which is what users see.
+        
+        // 2. Update Firestore (Batch update)
+        if (!this.firestore) return;
+
+        const snapshot = await this.firestore.collection('notifications')
+            .where('userId', '==', userId)
+            .where('read', '==', false)
+            .get();
+
+        if (snapshot.empty) return { count: 0 };
+
+        const batch = this.firestore.batch();
+        snapshot.docs.forEach(doc => {
+            batch.update(doc.ref, { read: true });
+        });
+
+        await batch.commit();
+        this.logger.log(`Marked ${snapshot.size} notifications as read for user ${userId}`);
+        return { count: snapshot.size };
+    }
+
+    async clearAll(userId: string) {
+        // 1. Clear from Firestore (Batch delete)
+        if (!this.firestore) return;
+
+        const snapshot = await this.firestore.collection('notifications')
+            .where('userId', '==', userId)
+            .get();
+
+        if (snapshot.empty) return { count: 0 };
+
+        const batch = this.firestore.batch();
+        snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        this.logger.log(`Cleared ${snapshot.size} notifications for user ${userId}`);
+        return { count: snapshot.size };
     }
 }

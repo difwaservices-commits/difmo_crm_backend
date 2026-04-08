@@ -77,6 +77,16 @@ employee: Employee;
   @Column({ default: 'active' })
   status: string;
 
+  @Column({ default: false })
+  workFromHome: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: ['office', 'remote', 'hybrid'],
+    default: 'office',
+  })
+  employeeType: string;
+
   @Column({ nullable: true })
   address: string;
 
@@ -96,6 +106,9 @@ employee: Employee;
 
    @Column({ nullable: true })
   avatar: string; 
+
+  @Column({ nullable: true })
+  checkInTime: string;
 
   @CreateDateColumn()
   createdAt: Date;

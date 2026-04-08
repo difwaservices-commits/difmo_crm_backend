@@ -5,6 +5,7 @@ import { Leave } from './leave.entity';
 import { CreateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import { Employee } from '../employees/employee.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class LeavesService {
@@ -14,16 +15,20 @@ export class LeavesService {
 
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
-    private readonly notificationsService: NotificationsService
-  ) {}
+    private readonly notificationsService: NotificationsService,
+    private readonly emailService: EmailService,
+  ) { }
 
   // ✅ CREATE LEAVE
   async create(createLeaveDto: CreateLeaveDto): Promise<Leave> {
     console.log("Incoming employeeId:", createLeaveDto.employeeId);
 
-    // 🔥 Map userId → employee
+    // 🔥 Map userId or employee.id → employee
     const employee = await this.employeeRepository.findOne({
-      where: { userId: createLeaveDto.employeeId },
+      where: [
+        { id: createLeaveDto.employeeId },
+        { userId: createLeaveDto.employeeId }
+      ],
       relations: ['user'],
     });
 
@@ -31,12 +36,12 @@ export class LeavesService {
       throw new NotFoundException("Employee not found");
     }
 
-    // ✅ Validation: date check
+    // Validation: date check
     if (createLeaveDto.startDate > createLeaveDto.endDate) {
       throw new BadRequestException("Start date cannot be after end date");
     }
 
-    // ✅ Conflict check (already approved leave)
+    // Conflict check (already approved leave)
     const conflict = await this.leavesRepository.findOne({
       where: {
         employeeId: employee.id,
@@ -57,65 +62,118 @@ export class LeavesService {
       employeeId: employee.id,
     });
 
-    console.log("✅ Saving leave for employeeId:", employee.id);
+    const savedLeave = await this.leavesRepository.save(leave);
 
-    return await this.leavesRepository.save(leave);
+    //  Real-time Notification to Admin
+    try {
+      await this.notificationsService.send({
+        title: 'New Leave Request',
+        message: `${employee.user?.firstName || 'An employee'} has applied for leave from ${createLeaveDto.startDate} to ${createLeaveDto.endDate}.`,
+        type: 'both',
+        recipientFilter: 'admin',
+        companyId: employee.companyId,
+        metadata: {
+          type: 'LEAVE_REQUEST',
+          employeeName: employee.user?.firstName || 'An employee',
+          startDate: createLeaveDto.startDate,
+          endDate: createLeaveDto.endDate,
+          leaveId: savedLeave.id,
+          employeeId: employee.id
+        }
+      });
+    } catch (err) {
+      console.error('[LeavesService] Failed to send admin notification:', err.message);
+    }
+
+    return savedLeave;
   }
 
-  // ✅ GET ALL (FILTER SUPPORT)
-// leaves.service.ts ke andar isse replace karein
+  //  GET ALL (FILTER SUPPORT)
+  async findAll(filters?: any): Promise<Leave[]> {
+    const query = this.leavesRepository
+      .createQueryBuilder('leave')
+      .leftJoinAndSelect('leave.employee', 'employee')
+      .leftJoinAndSelect('employee.user', 'user')
+      .orderBy('leave.createdAt', 'DESC');
 
-async findAll(filters?: any): Promise<Leave[]> {
-  const query = this.leavesRepository
-    .createQueryBuilder('leave')
-    .leftJoinAndSelect('leave.employee', 'employee') // Leave se Employee join kiya
-    .leftJoinAndSelect('employee.user', 'user')    // 🔥 AB USER BHI JOIN KIYA (Naam ke liye)
-    .orderBy('leave.createdAt', 'DESC');
+    if (filters?.employeeId) {
+      query.andWhere('employee.userId = :userId', {
+        userId: filters.employeeId,
+      });
+    }
 
-  // Filter logic (Same as before)
-  if (filters?.employeeId) {
-    query.andWhere('employee.userId = :userId', {
-      userId: filters.employeeId,
+    if (filters?.status) {
+      query.andWhere('leave.status = :status', { status: filters.status });
+    }
+
+    return query.getMany();
+  }
+
+  //  GET ONE
+  async findOne(id: string): Promise<Leave> {
+    const leave = await this.leavesRepository.findOne({
+      where: { id },
+      relations: ['employee', 'employee.user'],
     });
+
+    if (!leave) {
+      throw new NotFoundException('Leave not found');
+    }
+
+    return leave;
   }
 
-  if (filters?.status) {
-    query.andWhere('leave.status = :status', { status: filters.status });
-  }
-
-  return query.getMany();
-}
-
-  // ✅ GET ONE
- async findOne(id: string): Promise<Leave> {
-  const leave = await this.leavesRepository.findOne({
-    where: { id },
-    relations: ['employee', 'employee.user'], // 🔥 'employee.user' zaroori hai
-  });
-
-  if (!leave) {
-    throw new NotFoundException('Leave not found');
-  }
-
-  return leave;
-}
-
-  // ✅ UPDATE STATUS (APPROVE / REJECT)
+  //  UPDATE STATUS (APPROVE / REJECT)
   async updateStatus(id: string, dto: UpdateLeaveStatusDto): Promise<Leave> {
     const leave = await this.findOne(id);
 
-    leave.status = dto.status.toUpperCase(); // 🔥 normalize
-
+    leave.status = dto.status.toUpperCase();
     if (dto.adminComment) {
       leave.adminComment = dto.adminComment;
     }
 
-    console.log("✅ Updating leave:", id, "→", leave.status);
+    const updatedLeave = await this.leavesRepository.save(leave);
+    
+    //  Real-time Notification to Employee
+    try {
+      await this.notificationsService.send({
+        title: `Leave ${updatedLeave.status}`,
+        message: `Your leave application has been ${updatedLeave.status.toLowerCase()}.${updatedLeave.adminComment ? ` Admin Note: ${updatedLeave.adminComment}` : ''}`,
+        type: 'both',
+        recipientFilter: 'employees',
+        recipientIds: [updatedLeave.employee?.userId || ''],
+        companyId: updatedLeave.employee?.companyId || '',
+        metadata: {
+          type: 'LEAVE_STATUS',
+          leaveId: updatedLeave.id,
+          status: updatedLeave.status,
+          comment: updatedLeave.adminComment
+        }
+      });
+    } catch (err) {
+      console.error('[LeavesService] Failed to send employee notification:', err.message);
+    }
 
-    return await this.leavesRepository.save(leave);
+    // Also send direct email using nodemailer for important status updates
+    try {
+      const empEmail = updatedLeave.employee?.user?.email;
+      if (empEmail) {
+        const subject = `Leave ${updatedLeave.status}`;
+        const message = `Your leave application (${updatedLeave.id}) has been ${updatedLeave.status.toLowerCase()}. ${updatedLeave.adminComment ? 'Admin Note: ' + updatedLeave.adminComment : ''}`;
+        await this.emailService.sendLeaveStatusEmail(empEmail, subject, message, {
+          leaveId: updatedLeave.id,
+          status: updatedLeave.status,
+          comment: updatedLeave.adminComment,
+        });
+      }
+    } catch (emailErr) {
+      console.error('[LeavesService] Failed to send direct leave email:', emailErr?.message || emailErr);
+    }
+
+    return updatedLeave;
   }
 
-  // ✅ CHECK IF EMPLOYEE ON LEAVE
+  //  CHECK IF EMPLOYEE ON LEAVE
   async isEmployeeOnLeave(employeeId: string, date: string): Promise<boolean> {
     const leave = await this.leavesRepository.findOne({
       where: {

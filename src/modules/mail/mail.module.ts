@@ -11,10 +11,14 @@ import { join } from 'path';
       useFactory: (config: ConfigService) => ({
         transport: {
           host: config.get('MAIL_HOST') || 'smtp.gmail.com',
-          secure: false,
+          port: config.get('MAIL_PORT') || 465,
+          secure: true, // Switched to 465 SSL connection
+          tls: {
+            rejectUnauthorized: false,
+          },
           auth: {
-            user: config.get('MAIL_USER') || 'test@example.com',
-            pass: config.get('MAIL_PASS') || 'password',
+            user: config.get('MAIL_USER'),
+            pass: config.get('MAIL_PASS'),
           },
         },
         defaults: {
@@ -34,3 +38,11 @@ import { join } from 'path';
   exports: [MailerModule],
 })
 export class MailModule {}
+
+// NOTE: If emails are not being delivered, ensure the following env vars are set for the backend:
+// MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS
+// Example (.env):
+// MAIL_HOST=smtp.gmail.com
+// MAIL_PORT=465
+// MAIL_USER=your-email@gmail.com
+// MAIL_PASS=your-app-password-or-smtp-password

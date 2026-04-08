@@ -40,7 +40,7 @@ export class Attendance {
 
   @Column({
     type: 'enum',
-    enum: ['present', 'absent', 'leave', 'half-day','early_departure',''],
+    enum: ['present', 'absent', 'leave', 'half-day', 'early_departure', 'late', 'early_checkin'],
     default: 'present'
   })
   

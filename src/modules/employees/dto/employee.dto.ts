@@ -63,6 +63,13 @@ export class CreateEmployeeDto {
 
   @IsString()
   @IsOptional()
+  employeeType?: string;
+
+  @IsOptional()
+  workFromHome?: boolean;
+
+  @IsString()
+  @IsOptional()
   status?: string;
 
   @IsString()

@@ -36,7 +36,7 @@ import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { Notification } from './modules/notifications/entities/notification.entity';
 import { FcmToken } from './modules/notifications/entities/fcm-token.entity';
-import { DashboardController } from './modules/dashboard/dashboard.controller';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AllProject } from './modules/project/project.entity';
 import { AllProjectModule } from './modules/project/project.module';
 import { ClientsModule } from './modules/clients/clients.module';
@@ -46,6 +46,10 @@ import { Client  } from './modules/projects/entities/client.entity';
 import { Invoice } from './modules/invoices/invoice.entity';
 import { CompaniesModule } from './modules/companyGstDocs/copmanies.Gst.modules';
 import { CompanyGst } from './modules/companyGstDocs/company.Gst.entity';
+import { JobsModule } from './modules/jobs/jobs.module';
+import { Job } from './modules/jobs/entities/job.entity';
+import { Application } from './modules/jobs/entities/application.entity';
+import { JobMessage } from './modules/jobs/entities/message.entity';
 
 @Module({
   imports: [
@@ -98,6 +102,9 @@ import { CompanyGst } from './modules/companyGstDocs/company.Gst.entity';
          CRMClient,
          Invoice,
          CompanyGst,
+         Job,
+         Application,
+         JobMessage,
         ];
         if (dbUrl) {
           return {
@@ -144,9 +151,11 @@ import { CompanyGst } from './modules/companyGstDocs/company.Gst.entity';
     ClientsModule,
     // UploadModule,
     CompaniesModule,
+    DashboardModule,
+    JobsModule,
   ],
 
-  controllers: [AppController, DashboardController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule { }

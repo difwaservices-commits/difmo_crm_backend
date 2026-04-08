@@ -57,6 +57,12 @@ export class NotificationsController {
         return this.notificationsService.getHistory(companyId);
     }
 
+    // ─── Direct User Notifications (SQL Fallback) ─────────────────────────────────
+    @Get('mine')
+    getMyNotifications(@Request() req) {
+        return this.notificationsService.getUserNotifications(req.user.id);
+    }
+
     @Get('stats')
     @UseGuards(AbilitiesGuard)
     @CheckAbilities({ action: Action.Read, subject: 'notification' })
@@ -64,9 +70,14 @@ export class NotificationsController {
         return this.notificationsService.getStats(companyId);
     }
 
-    // ─── Employees List for recipient picker ─────────────────────────────────────
-    @Get('employees')
-    getEmployees(@Query('companyId') companyId: string) {
-        return this.notificationsService.getAllEmployees(companyId);
+    // ─── Interaction Logic ──────────────────────────────────────────────────────
+    @Post('mark-read')
+    markRead(@Request() req) {
+        return this.notificationsService.markAllAsRead(req.user.id);
+    }
+
+    @Delete('clear')
+    clearAll(@Request() req) {
+        return this.notificationsService.clearAll(req.user.id);
     }
 }

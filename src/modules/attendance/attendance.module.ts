@@ -9,6 +9,7 @@ import { LeavesModule } from '../leaves/leaves.module';
 import { EmployeeModule } from '../employees/employee.module';
 
 import { AccessControlModule } from '../access-control/access-control.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AccessControlModule } from '../access-control/access-control.module';
     LeavesModule,
     EmployeeModule,
     AccessControlModule,
+    NotificationsModule,
   ],
   controllers: [AttendanceController],
   providers: [AttendanceService],

@@ -7,12 +7,14 @@ import { EmployeeController } from './employee.controller';
 
 import { UserModule } from '../users/user.module';
 import { AccessControlModule } from '../access-control/access-control.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Employee, Company]),
     UserModule,
     AccessControlModule,
+    NotificationsModule,
   ],
   controllers: [EmployeeController],
   providers: [EmployeeService],
