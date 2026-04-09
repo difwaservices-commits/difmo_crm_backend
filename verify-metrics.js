@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 async function checkMetrics() {
-  const baseURL = 'http://localhost:3000';
+  const baseURL = 'https://difmo-crm-backend.vercel.app';
   
   try {
     console.log('--- LOGGING IN ---');
