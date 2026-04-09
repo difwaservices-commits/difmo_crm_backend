@@ -1,35 +1,29 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { EmployeeService } from '../employees/employee.service';
-import { AttendanceService } from '../attendance/attendance.service';
-import { ProjectsService } from '../projects/projects.service';
+import { DashboardService } from './dashboard.service';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
-  constructor(
-    private readonly employeeService: EmployeeService,
-    private readonly attendanceService: AttendanceService,
-    private readonly projectsService: ProjectsService,
-  ) {}
+  constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('metrics')
-  async getMetrics(@Query('companyId') companyId: string) {
-    const employees = await this.employeeService.findAll({ companyId });
-    const attendance = await this.attendanceService.findAll({
-      companyId,
-      date: new Date().toISOString().split('T')[0],
-    });
-    const tasks = await this.projectsService.findAllTasksByCompany(companyId);
+  async getMetrics(@Query('companyId') companyId: string, @Query('userId') userId?: string) {
+    return this.dashboardService.getMetrics(companyId, userId);
+  }
 
-    const completedTasks = tasks.filter((t) => t.status === 'completed').length;
-    const avgProductivity = 87; // Placeholder or calculate from productivity logs
+  @Get('charts')
+  async getCharts(@Query('companyId') companyId: string) {
+    return this.dashboardService.getChartData(companyId);
+  }
 
-    return {
-      totalEmployees: employees.length,
-      presentToday: attendance.length,
-      tasksCompleted: completedTasks,
-      avgProductivity,
-    };
+  @Get('feed')
+  async getFeed(@Query('companyId') companyId: string, @Query('userId') userId?: string) {
+    return this.dashboardService.getFeedData(companyId, userId);
+  }
+
+  @Get('financials')
+  async getFinancials(@Query('companyId') companyId: string) {
+    return this.dashboardService.getFinancials(companyId);
   }
 }

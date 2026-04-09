@@ -8,6 +8,7 @@ import { UserService } from '../users/user.service';
 
 import { MailerService } from '@nestjs-modules/mailer';
 import { Company } from '../companies/company.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class EmployeeService {
@@ -18,6 +19,7 @@ export class EmployeeService {
     private companyRepository: Repository<Company>,
     private userService: UserService,
     private mailerService: MailerService,
+    private notificationsService: NotificationsService,
   ) { }
 
   async create(
@@ -107,11 +109,30 @@ export class EmployeeService {
             year: new Date().getFullYear(),
           },
         }).catch(err => {
-          console.error('[EmployeeService] Mailer Error (handled):', err.message);
+          console.error('[EmployeeService] Mailer Error (handled):', err);
         });
       }
     } catch (error) {
       console.error('[EmployeeService] Critical failure in email logic (skipped):', error.message);
+    }
+
+    // 🔥 Real-time Notification to Employee
+    try {
+      await this.notificationsService.send({
+        title: 'Welcome to the Team!',
+        message: `Hello ${createEmployeeDto.firstName}, you have been added to the system. You can now login to access your dashboard.`,
+        type: 'both',
+        recipientFilter: 'employees',
+        recipientIds: [userId],
+        companyId: savedEmployee.companyId,
+        metadata: {
+          type: 'WELCOME',
+          employeeId: savedEmployee.id,
+          email: createEmployeeDto.email
+        }
+      });
+    } catch (err) {
+      console.error('[EmployeeService] Failed to send welcome notification:', err.message);
     }
 
     return savedEmployee;

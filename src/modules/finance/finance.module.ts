@@ -9,11 +9,13 @@ import { Employee } from '../employees/employee.entity';
 
 import { AccessControlModule } from '../access-control/access-control.module';
 import { Attendance } from '../attendance/attendance.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Payroll, Expense, Attendance, Company, Employee]),
-    AccessControlModule
+    AccessControlModule,
+    NotificationsModule,
   ],
   providers: [FinanceService],
   controllers: [FinanceController],

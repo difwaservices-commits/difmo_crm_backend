@@ -1,4 +1,7 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Request, UseGuards } from "@nestjs/common";
+import { 
+  BadRequestException, Body, Controller, Delete, 
+  Get, Param, Patch, Post, Request, UseGuards 
+} from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { ClientsService } from "./clients.service";
 
@@ -11,10 +14,24 @@ export class ClientsController {
     return this.clientsService.findAll();
   }
 
+  @Get(':id')
+  getOneClient(@Param('id') id: string) {
+    return this.clientsService.findOne(id);
+  }
+
   @Post()
   async createClient(@Body() clientData: any) {
-    // clientData mein ab name, email, phone, city, budget sab aayega
     return await this.clientsService.create(clientData);
+  }
+
+  @Patch(':id')
+  async updateClient(@Param('id') id: string, @Body() updateData: any) {
+    return await this.clientsService.update(id, updateData);
+  }
+
+  @Delete(':id')
+  async deleteClient(@Param('id') id: string) {
+    return await this.clientsService.remove(id);
   }
 
   @UseGuards(JwtAuthGuard)

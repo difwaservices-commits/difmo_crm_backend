@@ -6,6 +6,7 @@ import { Expense } from './entities/expense.entity';
 import { Company } from '../companies/company.entity';
 import { Employee } from '../employees/employee.entity';
 import { Attendance } from '../attendance/attendance.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 import PDFDocument from 'pdfkit';
 
 import { Settings } from 'http2';
@@ -27,6 +28,8 @@ export class FinanceService {
 
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
+
+    private readonly notificationsService: NotificationsService,
 
 
   ) { }
@@ -239,6 +242,26 @@ async findAllPayroll(
       });
 
       await this.payrollRepository.save(payroll);
+
+      // 🔥 Real-time Notification to Employee
+      try {
+        await this.notificationsService.send({
+          title: 'Payroll Generated',
+          message: `Your payroll for ${month}/${year} has been generated. Net Salary: ₹${netSalary.toFixed(2)}.`,
+          type: 'both',
+          recipientFilter: 'employees',
+          recipientIds: [emp.userId],
+          companyId: emp.companyId,
+          metadata: {
+            type: 'PAYROLL_GENERATED',
+            month,
+            year,
+            netSalary
+          }
+        });
+      } catch (err) {
+        console.error(`[FinanceService] Failed to notify employee ${emp.id}:`, err.message);
+      }
 
       payrolls.push({
         employeeId: emp.id,
@@ -483,28 +506,30 @@ async findAllPayroll(
 
     // Normalized totals (all converted to targetCurrency)
     const totalDebit = expenses
-      .filter((e) => e.type !== 'credit')
+      .filter((e) => e.type === 'debit' || e.type === 'expense')
       .reduce((sum, e) => sum + this.convert(Number(e.amount), e.currency, targetCurrency), 0);
 
     const totalCredit = expenses
-      .filter((e) => e.type === 'credit')
+      .filter((e) => e.type === 'credit' || e.type === 'income')
       .reduce((sum, e) => sum + this.convert(Number(e.amount), e.currency, targetCurrency), 0);
 
-    // Assuming payroll record salaries are in a base currency (USD) for this simplicity, 
-    // or we could add a currency field to payroll too if needed.
-    // FIX: Assuming payroll netSalary was calculated in INR (e.g., 20,000)
+    // Filter payrolls for those specifically in this period if possible, 
+    // though payroll records usually have month/year fields.
     const totalPayroll = payrolls.reduce(
       (sum, p) => sum + this.convert(Number(p.netSalary), 'INR', targetCurrency),
       0,
     );
+
+    const totalOutgoing = totalDebit + totalPayroll;
 
     return {
       totalDebit,
       totalCredit,
       totalExpenses: totalDebit,
       totalPayroll,
-      grandTotalOutgoing: totalDebit + totalPayroll,
-      turnover: this.convert(500000, 'USD', targetCurrency) + totalCredit,
+      grandTotalOutgoing: totalOutgoing,
+      turnover: totalCredit, // Using totalCredit/income as turnover
+      netBalance: totalCredit - totalOutgoing,
       expenseCount: expenses.length,
       payrollCount: payrolls.length,
       currency: targetCurrency.toUpperCase()

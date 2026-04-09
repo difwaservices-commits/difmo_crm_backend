@@ -10,7 +10,7 @@ import {
   JoinTable,
 } from 'typeorm';
 import { Company } from '../../companies/company.entity';
-import { Employee } from 'src/modules/employees/employee.entity';
+import { Employee } from '../../employees/employee.entity';
 
 @Entity()
 export class Client {

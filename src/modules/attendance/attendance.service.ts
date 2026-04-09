@@ -15,6 +15,7 @@ import {
 import { LeavesService } from '../leaves/leaves.service';
 import { EmployeeService } from '../employees/employee.service';
 import { Employee } from '../employees/employee.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AttendanceService {
@@ -28,6 +29,7 @@ export class AttendanceService {
     private attendanceRepository: Repository<Attendance>,
     private leavesService: LeavesService,
     private employeeService: EmployeeService,
+    private notificationsService: NotificationsService,
   ) { }
 
   private calculateDistance(
@@ -85,23 +87,7 @@ export class AttendanceService {
       throw e;
     }
 
-    // 2. Geofencing Check
-    if (checkInDto.latitude && checkInDto.longitude) {
-      const distance = this.calculateDistance(
-        checkInDto.latitude,
-        checkInDto.longitude,
-        this.OFFICE_LAT,
-        this.OFFICE_LNG,
-      );
-      console.log('[AttendanceService] Distance:', distance, 'MAX:', this.MAX_DISTANCE_METERS);
-      if (distance > this.MAX_DISTANCE_METERS) {
-        throw new ForbiddenException(
-          `You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`,
-        );
-      }
-    }
-
-    // 3. Resolve true Employee Record (handling userId vs employeeId)
+    // 2. Resolve true Employee Record (handling userId vs employeeId)
     let employeeRecord: Employee | null = null;
     try {
       // First try as direct Employee ID
@@ -122,6 +108,29 @@ export class AttendanceService {
 
       // Update DTO with the TRUE PK for database integrity
       checkInDto.employeeId = employeeRecord.id;
+
+    const ist = this.getISTTimeParts();
+    const checkInTime = ist.timeString;
+
+    // 3. Geofencing Check - apply based on employeeType and workFromHome flag
+    const requiresGeofenceCheck =
+      employeeRecord.employeeType === 'office' ||
+      (employeeRecord.employeeType === 'hybrid' && !employeeRecord.workFromHome);
+
+    if (requiresGeofenceCheck && checkInDto.latitude && checkInDto.longitude) {
+      const distance = this.calculateDistance(
+        checkInDto.latitude,
+        checkInDto.longitude,
+        this.OFFICE_LAT,
+        this.OFFICE_LNG,
+      );
+      console.log('[AttendanceService] Distance:', distance, 'MAX:', this.MAX_DISTANCE_METERS);
+      if (distance > this.MAX_DISTANCE_METERS) {
+        throw new ForbiddenException(
+          `You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`,
+        );
+      }
+    }
 
       if (employeeRecord.company && employeeRecord.company.openingTime) {
         console.log('[AttendanceService] Opening Time:', employeeRecord.company.openingTime);
@@ -166,36 +175,61 @@ export class AttendanceService {
     const ist = this.getISTTimeParts();
     const checkInTime = ist.timeString;
 
-    // Determine status
+    // Determine status with specific late/early rules
     let status = 'present';
-    // ... existing logic ...
     try {
       const employee = await this.employeeService.findOne(checkInDto.employeeId);
-      if (employee && employee.company && employee.company.openingTime) {
-        const [openHour, openMinute] = employee.company.openingTime
-          .split(':')
-          .map(Number);
-        // Late if more than 15 mins after opening time
-        if (
-          ist.hours > openHour ||
-          (ist.hours === openHour && ist.minutes > openMinute + 15)
-        ) {
+      if (!employee) throw new Error('Employee not found');
 
+      const specialEmployees = ['anuskapadit', 'khushhi', 'rahul', 'shadhna', 'simran'];
+      const employeeIdentifier = `${employee.user?.firstName || ''} ${employee.user?.lastName || ''} ${employee.user?.email || ''}`.toLowerCase();
+      
+      // Resolve Target Time
+      let targetTime = employee.checkInTime; // Using the new column
+      if (!targetTime) {
+        const isSpecial = specialEmployees.some(name => employeeIdentifier.includes(name));
+        targetTime = isSpecial ? '09:15' : '10:15';
+      }
+
+      const [targetHour, targetMinute] = targetTime.split(':').map(Number);
+      const targetTotalMinutes = targetHour * 60 + targetMinute;
+      const checkInTotalMinutes = ist.hours * 60 + ist.minutes;
+
+      if (checkInTotalMinutes > targetTotalMinutes) {
+        status = 'late';
+        // Send notification about late check-in
+        try {
+          await this.notificationsService.send({
+            title: 'Late Check-in',
+            message: `You checked in late at ${checkInTime}. Scheduled time: ${targetTime}.`,
+            type: 'realtime',
+            recipientFilter: 'employees',
+            recipientIds: [employee.userId],
+            companyId: employee.companyId,
+            metadata: { type: 'attendance', severity: 'warning' },
+          });
+        } catch (nErr) {
+          console.error('[AttendanceService] Notification error:', nErr);
         }
-      } else {
-        // Default logic if no company time set
-        const startHour = 9;
-        const startMinute = 0;
-        if (
-          ist.hours > startHour ||
-          (ist.hours === startHour && ist.minutes > startMinute + 15)
-        ) {
-
+      } else if (checkInTotalMinutes < targetTotalMinutes) {
+        status = 'early_checkin';
+        // Notify about early check-in
+        try {
+          await this.notificationsService.send({
+            title: 'Early Check-in',
+            message: `You checked in early at ${checkInTime}. Scheduled time: ${targetTime}.`,
+            type: 'realtime',
+            recipientFilter: 'employees',
+            recipientIds: [employee.userId],
+            companyId: employee.companyId,
+            metadata: { type: 'attendance', severity: 'info' },
+          });
+        } catch (nErr) {
+          console.error('[AttendanceService] Notification error:', nErr);
         }
       }
     } catch (e) {
       console.error('[AttendanceService] Error determining status:', e);
-      // Fallback to present
     }
 
     console.log('[AttendanceService] Status:', status);
@@ -255,7 +289,12 @@ export class AttendanceService {
     }
 
     // Geofencing Check for Checkout
-    if (checkOutDto.latitude && checkOutDto.longitude) {
+    const employee = await this.employeeService.findOne(attendance.employeeId);
+    const requiresGeofenceCheckout =
+      employee?.employeeType === 'office' ||
+      (employee?.employeeType === 'hybrid' && !employee.workFromHome);
+
+    if (employee && requiresGeofenceCheckout && checkOutDto.latitude && checkOutDto.longitude) {
       const distance = this.calculateDistance(
         checkOutDto.latitude,
         checkOutDto.longitude,
