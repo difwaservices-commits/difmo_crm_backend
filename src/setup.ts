@@ -12,8 +12,7 @@ export function setupApp(app: INestApplication) {
   app.enableCors({
     origin: [
       'https://difmo-crm-frontend.vercel.app',
-      'http://localhost:5173',
-      'http://localhost:3000'
+      'http://localhost:5173'
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
@@ -25,8 +24,8 @@ export function setupApp(app: INestApplication) {
     .setDescription('The Difmo CRM API description')
     .setVersion('1.0')
     .addBearerAuth()
+    .addServer('https://difmo-crm-backend.vercel.app', 'Production')
     .addServer('http://localhost:3000', 'Development')
-    .addServer('https://api.difmocrm.com', 'Production')
     .build();
   const document = SwaggerModule.createDocument(app, config);
 

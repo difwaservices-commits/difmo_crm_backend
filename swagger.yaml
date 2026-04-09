@@ -906,10 +906,10 @@ info:
   contact: {}
 tags: []
 servers:
+  - url: https://difmo-crm-backend.vercel.app
+    description: Production
   - url: http://localhost:3000
     description: Development
-  - url: https://api.difmocrm.com
-    description: Production
 components:
   securitySchemes:
     bearer:

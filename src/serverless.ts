@@ -17,8 +17,7 @@ export default async (req, res) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
     'https://difmo-crm-frontend.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3000'
+    'http://localhost:5173'
   ];
 
   if (allowedOrigins.includes(origin)) {

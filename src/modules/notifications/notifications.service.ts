@@ -125,7 +125,7 @@ export class NotificationsService implements OnModuleInit {
 
     private getEmailTemplate(type: string, title: string, message: string, metadata: any = {}): string {
         const logoUrl = 'https://via.placeholder.com/150?text=Difmo+CRM'; 
-        const appUrl = this.configService.get('APP_URL') || 'http://localhost:3000';
+        const appUrl = this.configService.get('APP_URL') || 'https://difmo-crm-frontend.vercel.app';
         const baseStyle = `
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
