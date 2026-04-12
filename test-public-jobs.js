@@ -1,7 +1,7 @@
 const http = require('http');
 
 const options = {
-  hostname: 'difmo-crm-backend.vercel.app',
+  hostname: 'localhost',
   port: 3000,
   path: '/public/jobs',
   method: 'GET'

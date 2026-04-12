@@ -7,6 +7,7 @@ import { Company } from '../companies/company.entity';
 import { Employee } from '../employees/employee.entity';
 import { Attendance } from '../attendance/attendance.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MailService } from '../mail/mail.service';
 import PDFDocument from 'pdfkit';
 
 import { Settings } from 'http2';
@@ -30,8 +31,7 @@ export class FinanceService {
     private readonly attendanceRepository: Repository<Attendance>,
 
     private readonly notificationsService: NotificationsService,
-
-
+    private readonly mailService: MailService,
   ) { }
 
   // Exchange rates relative to 1 USD
@@ -46,7 +46,7 @@ export class FinanceService {
   /**
    * Converts an amount from source currency to target currency
    */
-  private convert(amount: number, from: string = 'USD', to: string = 'USD'): number {
+  private convert(amount: number, from: string = 'INR', to: string = 'INR'): number {
     const fromRate = this.rates[from.toUpperCase()] || 1;
     const toRate = this.rates[to.toUpperCase()] || 1;
     // Convert to USD first, then to target
@@ -261,6 +261,22 @@ async findAllPayroll(
         });
       } catch (err) {
         console.error(`[FinanceService] Failed to notify employee ${emp.id}:`, err.message);
+      }
+
+      // 📧 Send Email Notification
+      try {
+        const empEmail = emp.user?.email;
+        if (empEmail) {
+          await this.mailService.sendPayrollEmail(empEmail, {
+            employeeName: `${emp.user?.firstName} ${emp.user?.lastName}`,
+            month,
+            year,
+            netSalary: netSalary,
+          });
+          console.log(`[FinanceService] Email sent to employee ${emp.id}`);
+        }
+      } catch (emailErr) {
+        console.error(`[FinanceService] Failed to send payroll email to employee ${emp.id}:`, emailErr.message);
       }
 
       payrolls.push({
@@ -483,7 +499,7 @@ async findAllPayroll(
   }
 
   // turnover & summary
-  async getFinancialSummary(companyId: string, month?: number, year?: number, targetCurrency: string = 'USD') {
+  async getFinancialSummary(companyId: string, month?: number, year?: number, targetCurrency: string = 'INR') {
     const where: any = { companyId };
 
     let expenses = await this.expenseRepository.find({ where });

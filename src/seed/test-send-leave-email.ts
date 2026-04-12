@@ -7,7 +7,7 @@ async function run() {
   try {
     const emailService = app.get(EmailService);
     console.log('Sending test leave email via EmailService...');
-    const res = await emailService.sendLeaveStatusEmail(process.env.TEST_LEAVE_EMAIL || process.env.MAIL_USER || 'test@example.com', 'Test Leave Approved', 'This is a test: your leave has been approved.', { comment: 'Approved by automated test' });
+    const res = await emailService.sendStatusEmail(process.env.TEST_LEAVE_EMAIL || process.env.MAIL_USER || 'test@example.com', 'Test Leave Approved', 'This is a test: your leave has been approved.');
     console.log('Email send result:', res);
   } catch (err) {
     console.error('Error sending leave email:', err);

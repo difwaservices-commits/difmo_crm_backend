@@ -12,8 +12,8 @@ async function main() {
   for (const email of emails) {
     const user = await userService.findByEmail(email);
     if (user) {
-      const passwordMatch = await bcrypt.compare('Password123!', user.password);
-      console.log(`${email}: FOUND | password hash: ${user.password.substring(0, 20)}... | Password123! match: ${passwordMatch}`);
+      const passwordMatch = await bcrypt.compare('password123', user.password);
+      console.log(`${email}: FOUND | password hash: ${user.password.substring(0, 20)}... | password123 match: ${passwordMatch}`);
     } else {
       console.log(`${email}: NOT FOUND`);
     }

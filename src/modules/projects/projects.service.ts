@@ -6,6 +6,7 @@ import { Project } from './entities/project.entity';
 import { Task } from './entities/task.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Employee } from '../employees/employee.entity';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class ProjectsService {
@@ -19,6 +20,7 @@ export class ProjectsService {
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,
     private readonly notificationsService: NotificationsService,
+    private readonly mailService: MailService,
   ) { }
 
   // Clients
@@ -67,30 +69,48 @@ export class ProjectsService {
     const newTask = this.taskRepository.create(taskData);
     const savedTask = await this.taskRepository.save(newTask) as any;
 
-    // 🔥 Real-time Notification for Task Assignment
+    // 🔥 Real-time & Email Notification for Task Assignment
     if (savedTask.assigneeId) {
       try {
-        // We need to fetch the employee to get the userId for notification
+        // Fetch assignee once for both notification types
         const assignee = await this.employeeRepository.findOne({
           where: { id: savedTask.assigneeId },
           relations: ['user']
         });
 
-        if (assignee?.userId) {
-          await this.notificationsService.send({
-            title: 'New Task Assigned',
-            message: `You have been assigned a new task: ${savedTask.title}. Priority: ${savedTask.priority}.`,
-            type: 'both',
-            recipientFilter: 'employees',
-            recipientIds: [assignee.userId],
-            companyId: savedTask.companyId || (assignee.companyId),
-            metadata: {
-              type: 'TASK_ASSIGNED',
-              taskId: savedTask.id,
-              projectId: savedTask.projectId,
-              priority: savedTask.priority
+        if (assignee) {
+          // 1. Real-time Notification
+          if (assignee.userId) {
+            await this.notificationsService.send({
+              title: 'New Task Assigned',
+              message: `You have been assigned a new task: ${savedTask.title}. Priority: ${savedTask.priority}.`,
+              type: 'both',
+              recipientFilter: 'employees',
+              recipientIds: [assignee.userId],
+              companyId: savedTask.companyId || assignee.companyId,
+              metadata: {
+                type: 'TASK_ASSIGNED',
+                taskId: savedTask.id,
+                projectId: savedTask.projectId,
+                priority: savedTask.priority
+              }
+            });
+          }
+
+          // 2. Email Notification
+          if (assignee.user?.email) {
+            try {
+              await this.mailService.sendTaskAssignmentEmail(assignee.user.email, {
+                employeeName: `${assignee.user.firstName} ${assignee.user.lastName}`,
+                taskTitle: savedTask.title,
+                priority: savedTask.priority || 'medium',
+                deadline: savedTask.deadline?.toLocaleDateString(),
+              });
+              console.log(`[ProjectsService] Task assignment email sent to: ${assignee.user.email}`);
+            } catch (emailErr) {
+              console.error('[ProjectsService] Failed to send task assignment email:', emailErr.message);
             }
-          });
+          }
         }
       } catch (err) {
         console.error('[ProjectsService] Failed to notify assignee:', err.message);

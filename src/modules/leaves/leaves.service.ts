@@ -5,7 +5,7 @@ import { Leave } from './leave.entity';
 import { CreateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import { Employee } from '../employees/employee.entity';
 import { NotificationsService } from '../notifications/notifications.service';
-import { EmailService } from './email.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class LeavesService {
@@ -16,7 +16,7 @@ export class LeavesService {
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
     private readonly notificationsService: NotificationsService,
-    private readonly emailService: EmailService,
+    private readonly mailService: MailService,
   ) { }
 
   // ✅ CREATE LEAVE
@@ -158,11 +158,11 @@ export class LeavesService {
     try {
       const empEmail = updatedLeave.employee?.user?.email;
       if (empEmail) {
-        const subject = `Leave ${updatedLeave.status}`;
-        const message = `Your leave application (${updatedLeave.id}) has been ${updatedLeave.status.toLowerCase()}. ${updatedLeave.adminComment ? 'Admin Note: ' + updatedLeave.adminComment : ''}`;
-        await this.emailService.sendLeaveStatusEmail(empEmail, subject, message, {
-          leaveId: updatedLeave.id,
+        await this.mailService.sendLeaveStatusEmail(empEmail, {
+          employeeName: `${updatedLeave.employee?.user?.firstName} ${updatedLeave.employee?.user?.lastName}`,
           status: updatedLeave.status,
+          startDate: updatedLeave.startDate,
+          endDate: updatedLeave.endDate,
           comment: updatedLeave.adminComment,
         });
       }
