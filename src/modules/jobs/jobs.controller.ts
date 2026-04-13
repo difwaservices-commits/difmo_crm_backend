@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param, Query, Patch, UseGuards, Delete, Ba
 import { JobsService } from './jobs.service';
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobsService: JobsService) {}
+  constructor(private readonly jobsService: JobsService) { }
 
   @Post()
   createJob(@Body() body: any) {

@@ -11,7 +11,7 @@ export class JobsService {
     @InjectRepository(Job) private jobsRepo: Repository<Job>,
     @InjectRepository(Application) private appsRepo: Repository<Application>,
     @InjectRepository(JobMessage) private msgsRepo: Repository<JobMessage>,
-  ) {}
+  ) { }
 
   // Jobs
   createJob(data: Partial<Job>) {
@@ -41,7 +41,7 @@ export class JobsService {
     const qb = this.appsRepo.createQueryBuilder('app')
       .leftJoinAndSelect('app.job', 'job')
       .orderBy('app.createdAt', 'DESC');
-    
+
     if (filter?.jobId) qb.andWhere('app.jobId = :jobId', { jobId: filter.jobId });
     if (filter?.status) qb.andWhere('app.status = :status', { status: filter.status });
     return qb.getMany();
@@ -78,7 +78,7 @@ export class JobsService {
 
   async listMessages(filter?: any) {
     try {
-      const qb = this.msgsRepo.createQueryBuilder('m').orderBy('m.createdAt','DESC');
+      const qb = this.msgsRepo.createQueryBuilder('m').orderBy('m.createdAt', 'DESC');
       if (filter?.jobId) qb.andWhere('m.jobId = :jobId', { jobId: filter.jobId });
       return await qb.getMany();
     } catch (error) {

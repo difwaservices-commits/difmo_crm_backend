@@ -63,7 +63,7 @@ async function addEmployeeTypeColumn() {
     await AppDataSource.destroy();
   } catch (err) {
     console.error('Migration failed:', err);
-    try { await AppDataSource.destroy(); } catch (e) {}
+    try { await AppDataSource.destroy(); } catch (e) { }
     process.exit(1);
   }
 }
