@@ -51,6 +51,9 @@ import { Job } from './modules/jobs/entities/job.entity';
 import { Application } from './modules/jobs/entities/application.entity';
 import { JobMessage } from './modules/jobs/entities/message.entity';
 
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -156,6 +159,12 @@ import { JobMessage } from './modules/jobs/entities/message.entity';
   ],
 
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule { }

@@ -3,6 +3,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
+import { MailService } from './mail.service';
 
 @Global()
 @Module({
@@ -22,7 +23,7 @@ import { join } from 'path';
           },
         },
         defaults: {
-          from: '"No Reply" <noreply@example.com>',
+          from: `"CRM Notifications" <${config.get('MAIL_USER')}>`,
         },
         template: {
           dir: join(__dirname, 'templates'),
@@ -35,14 +36,21 @@ import { join } from 'path';
       inject: [ConfigService],
     }),
   ],
-  exports: [MailerModule],
+  providers: [MailService],
+  exports: [MailerModule, MailService],
 })
-export class MailModule {}
+export class MailModule { }
 
 // NOTE: If emails are not being delivered, ensure the following env vars are set for the backend:
 // MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS
 // Example (.env):
 // MAIL_HOST=smtp.gmail.com
 // MAIL_PORT=465
-// MAIL_USER=your-email@gmail.com
-// MAIL_PASS=your-app-password-or-smtp-password
+// MAIL_USER=your-email@gmail.com (must be the gmail account)
+// MAIL_PASS=your-16-character-app-password
+// ⚠️ CRITICAL: The sender email MUST match MAIL_USER for Gmail SMTP to work correctly
+// If emails still don't send:
+// 1. Verify MAIL_USER is a valid Gmail account
+// 2. Create App Password: https://myaccount.google.com/apppasswords
+// 3. Disable "Less Secure App Access" and use App Password instead
+// 4. Check backend console logs for specific error messages

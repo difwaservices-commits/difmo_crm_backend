@@ -133,7 +133,7 @@ export class LeavesService {
     }
 
     const updatedLeave = await this.leavesRepository.save(leave);
-    
+
     //  Real-time Notification to Employee
     try {
       await this.notificationsService.send({

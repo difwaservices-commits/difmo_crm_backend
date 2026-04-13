@@ -10,10 +10,7 @@ import {
 } from '@nestjs/common';
 import { LeavesService } from './leaves.service';
 import { CreateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-
 @Controller('leaves')
-@UseGuards(JwtAuthGuard)
 export class LeavesController {
   constructor(private readonly leavesService: LeavesService) {}
 

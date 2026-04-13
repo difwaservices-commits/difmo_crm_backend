@@ -36,7 +36,7 @@ export class EmailService {
 				text,
 				html,
 			});
-            
+
 			this.logger.log(`Leave status email sent to ${to}: ${info?.messageId || info?.response}`);
 			return info;
 		} catch (err) {

@@ -124,8 +124,8 @@ export class NotificationsService implements OnModuleInit {
     // ─── Email Templates ─────────────────────────────────────────────────────────
 
     private getEmailTemplate(type: string, title: string, message: string, metadata: any = {}): string {
-        const logoUrl = 'https://via.placeholder.com/150?text=Difmo+CRM'; 
-        const appUrl = this.configService.get('APP_URL') || 'https://difmo-crm-frontend.vercel.app';
+        const logoUrl = 'https://via.placeholder.com/150?text=Difmo+CRM';
+        const appUrl = this.configService.get('APP_URL') || 'http://localhost:3000';
         const baseStyle = `
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
@@ -239,7 +239,7 @@ export class NotificationsService implements OnModuleInit {
                 .where('user.companyId = :companyId', { companyId: dto.companyId })
                 .andWhere('LOWER(role.name) IN (:...roleNames)', { roleNames: ['admin', 'super admin', 'superadmin'] })
                 .getMany();
-            
+
             this.logger.log(`Found ${admins.length} admins to notify for company ${dto.companyId}`);
             for (const admin of admins) {
                 if (admin.email) emails.push(admin.email);
@@ -365,7 +365,7 @@ export class NotificationsService implements OnModuleInit {
         // Note: For simplicity, we are updating the recipientIds JSON array matching logic
         // In a real high-scale app, you'd have a join table for read status.
         // For this MVP, we focus on the real-time Firestore sync which is what users see.
-        
+
         // 2. Update Firestore (Batch update)
         if (!this.firestore) return;
 

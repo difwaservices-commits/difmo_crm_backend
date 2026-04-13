@@ -196,7 +196,7 @@ export class AttendanceService {
       const checkInTotalMinutes = ist.hours * 60 + ist.minutes;
 
       if (checkInTotalMinutes > targetTotalMinutes) {
-        status = 'late';
+        status = 'present'; // Forced to present for uniformity
         // Send notification about late check-in
         try {
           await this.notificationsService.send({
@@ -212,7 +212,7 @@ export class AttendanceService {
           console.error('[AttendanceService] Notification error:', nErr);
         }
       } else if (checkInTotalMinutes < targetTotalMinutes) {
-        status = 'early_checkin';
+        status = 'present'; // Forced to present for uniformity
         // Notify about early check-in
         try {
           await this.notificationsService.send({

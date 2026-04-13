@@ -10,13 +10,11 @@ import {
     Request,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AbilitiesGuard } from '../access-control/abilities.guard';
 import { CheckAbilities } from '../access-control/abilities.decorator';
 import { Action } from '../access-control/ability.factory';
 
 @Controller('notifications')
-@UseGuards(JwtAuthGuard)
 export class NotificationsController {
     constructor(private readonly notificationsService: NotificationsService) { }
 

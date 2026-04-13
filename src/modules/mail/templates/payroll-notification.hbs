@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid #10b981; }
+        .content { padding: 20px 0; }
+        .footer { font-size: 12px; text-align: center; color: #718096; margin-top: 20px; }
+        .salary { font-size: 24px; font-weight: bold; color: #059669; }
+        .details { background: #f0fdf4; padding: 15px; border-radius: 8px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Payroll Generated</h2>
+        </div>
+        <div class="content">
+            <p>Hello <strong>{{name}}</strong>,</p>
+            <p>Your payroll for <strong>{{month}}/{{year}}</strong> has been generated successfully.</p>
+            
+            <div class="details">
+                <p>Net Salary Disbursed:</p>
+                <p class="salary">₹{{salary}}</p>
+                <p>Status: <span style="color: #6366f1; font-weight: bold;">Processed</span></p>
+            </div>
+            
+            <p>You can view and download your payslip from the employee dashboard.</p>
+        </div>
+        <div class="footer">
+            <p>Thank you for being part of our team!</p>
+            <p>© CRM System</p>
+        </div>
+    </div>
+</body>
+</html>

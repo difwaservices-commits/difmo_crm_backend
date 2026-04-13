@@ -7,7 +7,7 @@ async function checkMetrics() {
     console.log('--- LOGGING IN ---');
     const loginRes = await axios.post(`${baseURL}/auth/login`, {
       email: 'admin@difmo.com',
-      password: 'Password123!'
+      password: 'password123'
     });
     
     const token = loginRes.data.data.access_token;

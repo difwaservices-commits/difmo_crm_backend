@@ -1,8 +1,7 @@
 import { 
   BadRequestException, Body, Controller, Delete, 
-  Get, Param, Patch, Post, Request, UseGuards 
+  Get, Param, Patch, Post, Request
 } from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { ClientsService } from "./clients.service";
 
 @Controller('api/clients')
@@ -34,7 +33,6 @@ export class ClientsController {
     return await this.clientsService.remove(id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post(':id/send-invoice')
   async sendInvoice(
     @Param('id') id: string,
