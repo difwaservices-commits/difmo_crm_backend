@@ -5,11 +5,9 @@ import {
   Body,
   Param,
   Patch,
-  UseGuards,
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('company')
 export class CompanyController {
@@ -32,7 +30,6 @@ export class CompanyController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
   update(@Param('id') id: string, @Body() updateData: any) {
     return this.companyService.update(id, updateData);
   }

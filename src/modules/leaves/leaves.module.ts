@@ -8,10 +8,11 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { EmailService } from './email.service';
 
 
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Leave, Employee]), NotificationsModule],
+  imports: [TypeOrmModule.forFeature([Leave, Employee,]), NotificationsModule],
   controllers: [LeavesController],
-  providers: [LeavesService],
+  providers: [LeavesService, EmailService],
   exports: [LeavesService],
 })
 export class LeavesModule { }

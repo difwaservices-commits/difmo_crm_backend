@@ -10,13 +10,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AbilitiesGuard } from '../access-control/abilities.guard';
 import { CheckAbilities } from '../access-control/abilities.decorator';
 import { Action } from '../access-control/ability.factory';
 
 @Controller('projects')
-@UseGuards(JwtAuthGuard, AbilitiesGuard)
+@UseGuards(AbilitiesGuard)
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) { }
 

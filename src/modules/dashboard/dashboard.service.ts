@@ -16,7 +16,7 @@ export class DashboardService {
     private readonly leavesService: LeavesService,
     private readonly auditLogService: AuditLogService,
     private readonly financeService: FinanceService,
-  ) {}
+  ) { }
 
   async getMetrics(companyId: string, userId?: string) {
     if (!companyId) {
@@ -25,52 +25,83 @@ export class DashboardService {
     }
 
     console.log(`[DashboardService] Fetching metrics for company: ${companyId}, user: ${userId || 'all'}`);
-    
+
     // Use IST today string to match attendance date logic
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-    
+
     let employeesPromise;
     let attendanceTodayPromise;
     let tasksPromise;
 
     if (userId) {
-        employeesPromise = this.employeeService.findAll({ companyId }); // still need total count maybe? or just 1?
-        attendanceTodayPromise = this.attendanceService.findAll({ 
-            userId, // Assuming attendance service can filter by userId
-            startDate: today,
-            endDate: today 
-        });
-        tasksPromise = this.projectsService.findAllTasksByCompany(companyId); // we'll filter below
+      employeesPromise = this.employeeService.findAll({ companyId }); // still need total count maybe? or just 1?
+      attendanceTodayPromise = this.attendanceService.findAll({
+        userId, // Assuming attendance service can filter by userId
+        startDate: today,
+        endDate: today
+      });
+      tasksPromise = this.projectsService.findAllTasksByCompany(companyId); // we'll filter below
     } else {
-        employeesPromise = this.employeeService.findAll({ companyId });
-        attendanceTodayPromise = this.attendanceService.findAll({
-            companyId,
-            startDate: today,
-            endDate: today,
-        });
-        tasksPromise = this.projectsService.findAllTasksByCompany(companyId);
+      employeesPromise = this.employeeService.findAll({ companyId });
+      attendanceTodayPromise = this.attendanceService.findAll({
+        companyId,
+        startDate: today,
+        endDate: today,
+      });
+      tasksPromise = this.projectsService.findAllTasksByCompany(companyId);
     }
 
     const [employees, attendanceToday, tasks] = await Promise.all([
-        employeesPromise,
-        attendanceTodayPromise,
-        tasksPromise
+      employeesPromise,
+      attendanceTodayPromise,
+      tasksPromise
     ]);
 
     let displayTasks = tasks;
     if (userId) {
-        displayTasks = tasks.filter((t: any) => t.assigneeId === userId || t.createdById === userId);
+      displayTasks = tasks.filter((t: any) => t.assigneeId === userId || t.createdById === userId);
     }
 
     const completedTasks = displayTasks.filter((t: any) => t.status?.toLowerCase() === 'completed').length;
     const totalTasks = displayTasks.length;
     const productivityScore = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
+    // Get unique employees present today and categorize check-in type
+    const uniqueEmployeeIds = new Set();
+    const earlyCheckIns = new Set();
+    const lateCheckIns = new Set();
+    const onTimeCheckIns = new Set();
+
+    attendanceToday.forEach((att: any) => {
+      uniqueEmployeeIds.add(att.employeeId);
+
+      // Determine if early or late checkin
+      const checkInTime = new Date(att.checkInTime);
+      const expectedCheckInTime = new Date(att.checkInTime);
+      expectedCheckInTime.setHours(9, 0, 0, 0); // Expected checkin at 9 AM
+
+      if (checkInTime < expectedCheckInTime) {
+        earlyCheckIns.add(att.employeeId);
+      } else if (checkInTime > expectedCheckInTime) {
+        lateCheckIns.add(att.employeeId);
+      } else {
+        onTimeCheckIns.add(att.employeeId);
+      }
+    });
+
+    const uniquePresentCount = userId ? (attendanceToday.length > 0 ? 1 : 0) : uniqueEmployeeIds.size;
+
     return {
       totalEmployees: employees.length,
-      presentToday: userId ? (attendanceToday.length > 0 ? 1 : 0) : attendanceToday.length,
+      presentToday: uniquePresentCount,
       tasksCompleted: completedTasks,
-      avgProductivity: productivityScore, 
+      avgProductivity: productivityScore,
+      attendanceBreakdown: {
+        early: earlyCheckIns.size,
+        late: lateCheckIns.size,
+        onTime: onTimeCheckIns.size,
+        total: uniqueEmployeeIds.size
+      }
     };
   }
 
@@ -101,11 +132,11 @@ export class DashboardService {
 
     const productivityData = last7Days.map((date) => {
       const dateStr = date.toISOString().split('T')[0];
-      const completedOnDay = tasks.filter((t: any) => 
-        t.status === 'completed' && 
+      const completedOnDay = tasks.filter((t: any) =>
+        t.status === 'completed' &&
         new Date(t.updatedAt).toISOString().split('T')[0] === dateStr
       ).length;
-      
+
       return {
         date: date.toLocaleDateString('en-US', { weekday: 'short' }),
         value: 60 + (completedOnDay * 10) > 100 ? 100 : 60 + (completedOnDay * 10),
@@ -121,24 +152,24 @@ export class DashboardService {
   async getFeedData(companyId: string, userId?: string) {
     const auditLogs = await this.auditLogService.findAll();
     const tasks = await this.projectsService.findAllTasksByCompany(companyId);
-    
+
     // 💡 Personalization: For admins, show pending. For employees, show their approved ones.
-    const pendingLeaves = userId 
-        ? await this.leavesService.findAll({ employeeId: undefined, status: 'APPROVED' }) // need filter by userId/employeeId
-        : await this.leavesService.findAll({ status: 'PENDING' });
+    const pendingLeaves = userId
+      ? await this.leavesService.findAll({ employeeId: undefined, status: 'APPROVED' }) // need filter by userId/employeeId
+      : await this.leavesService.findAll({ status: 'PENDING' });
 
     const recentActivity = auditLogs.slice(0, 5).map(log => ({
       id: log.id,
-      type: log.action.toLowerCase().includes('task') ? 'task' : 
-            log.action.toLowerCase().includes('leave') ? 'leave' : 'info',
+      type: log.action.toLowerCase().includes('task') ? 'task' :
+        log.action.toLowerCase().includes('leave') ? 'leave' : 'info',
       message: `${log.user?.firstName || 'User'} ${log.user?.lastName || ''}: ${log.action}`,
       time: this.getRelativeTime(new Date(log.createdAt)),
     }));
 
     const upcomingEvents = tasks
       .filter((t: any) => {
-          const isRelevant = userId ? (t.assigneeId === userId) : true;
-          return isRelevant && t.status !== 'completed' && t.deadline;
+        const isRelevant = userId ? (t.assigneeId === userId) : true;
+        return isRelevant && t.status !== 'completed' && t.deadline;
       })
       .slice(0, 5)
       .map(t => ({
@@ -152,20 +183,20 @@ export class DashboardService {
 
     // Add approved leaves to upcoming events if it's for an employee
     if (userId) {
-        // We'll refine the filter to only this user's leaves once the service supports it properly
-        const userLeaves = await this.leavesService.findAll({ status: 'APPROVED' });
-        const myLeaves = userLeaves.filter(l => l.employee?.userId === userId);
-        
-        myLeaves.forEach(l => {
-            upcomingEvents.push({
-                id: l.id,
-                title: `Leave: ${l.type}`,
-                date: `${l.startDate} to ${l.endDate}`,
-                time: 'Approved',
-                type: 'leave',
-                description: `Your ${l.type} leave has been approved.`
-            });
+      // We'll refine the filter to only this user's leaves once the service supports it properly
+      const userLeaves = await this.leavesService.findAll({ status: 'APPROVED' });
+      const myLeaves = userLeaves.filter(l => l.employee?.userId === userId);
+
+      myLeaves.forEach(l => {
+        upcomingEvents.push({
+          id: l.id,
+          title: `Leave: ${l.type}`,
+          date: `${l.startDate} to ${l.endDate}`,
+          time: 'Approved',
+          type: 'leave',
+          description: `Your ${l.type} leave has been approved.`
         });
+      });
     }
 
     return {
@@ -194,7 +225,7 @@ export class DashboardService {
   private getRelativeTime(date: Date): string {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;

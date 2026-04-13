@@ -9,6 +9,8 @@ import { ProjectsController } from './projects.controller';
 
 import { AccessControlModule } from '../access-control/access-control.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { MailService } from '../mail/mail.service';
+
 
 @Module({
   imports: [

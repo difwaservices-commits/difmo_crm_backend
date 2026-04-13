@@ -3,14 +3,13 @@ import {
   Post,
   Patch,
   Body,
-  UseGuards,
   Get,
   Request,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './jwt-auth.guard';
 import { UserService } from '../users/user.service';
+import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -19,6 +18,7 @@ export class AuthController {
     private userService: UserService,
   ) {}
 //login endpoint that validates the user's credentials and returns a JWT token if valid. It uses the AuthService to perform the validation and token generation. If the credentials are invalid, it throws an UnauthorizedException.
+  @Public()
   @Post('login')
   async login(@Body() req) {
     const user = await this.authService.validateUser(req.email, req.password);
@@ -29,12 +29,12 @@ export class AuthController {
   }
 
 //register endpoint that allows new users to create an account. It accepts user details in the request body and uses the AuthService to create a new user record in the database. The implementation of the registration logic (e.g., hashing passwords, validating input) would be handled within the AuthService.
+  @Public()
   @Post('register')
   async register(@Body() body: any) {
     return this.authService.register(body);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {
     const user = await this.userService.findById(req.user.id);
@@ -57,7 +57,6 @@ export class AuthController {
   }
 
   // Update logged-in user profile
-  @UseGuards(JwtAuthGuard)
   @Patch('profile')
   async updateProfile(@Request() req, @Body() body: any) {
     // req.user is the full User entity from JwtStrategy

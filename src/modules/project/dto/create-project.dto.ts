@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsDateString,
   IsNumber,
+  IsArray,
 } from 'class-validator';
 
 export class CreateProjectDto {
@@ -19,8 +20,8 @@ export class CreateProjectDto {
 
   @IsString()
   contactInfo: string;
-  
-  
+
+
 
   @IsOptional()
   @IsDateString()
@@ -49,4 +50,9 @@ export class CreateProjectDto {
   @IsOptional()
   @IsString()
   assignedPeople?: string;
+
+  @IsOptional()
+  @IsArray()
+  assignedEmployeeIds?: number[];
 }
+

@@ -63,56 +63,56 @@ export class FinanceService {
   // }
 
   // finance.service.ts
-async findAllPayroll(
-  employeeId?: string,
-  month?: number,
-  year?: number,
-  companyId?: string,
-): Promise<Payroll[]> {
-  
-  // 1. Repository ki jagah QueryBuilder use karo duplicates se bachne ke liye
-  const query = this.payrollRepository.createQueryBuilder('payroll')
-    .leftJoinAndSelect('payroll.employee', 'employee')
-    .leftJoinAndSelect('employee.user', 'user');
+  async findAllPayroll(
+    employeeId?: string,
+    month?: number,
+    year?: number,
+    companyId?: string,
+  ): Promise<Payroll[]> {
 
-  // 2. Admin Case: Filter by Company
-  if (companyId && companyId !== 'undefined') {
-    query.andWhere('payroll.companyId = :companyId', { companyId });
-  } 
-  
-  // 3. Employee Case: Filter by Employee (User ID or Profile ID)
-  else if (employeeId && employeeId !== 'undefined') {
-    // Check if the ID is a UserID or EmployeeID
-    const employee = await this.employeeRepository.findOne({
-      where: [{ id: employeeId }, { userId: employeeId }] 
-    });
-    
-    const finalId = employee ? employee.id : employeeId;
-    query.andWhere('payroll.employeeId = :employeeId', { employeeId: finalId });
+    // 1. Repository ki jagah QueryBuilder use karo duplicates se bachne ke liye
+    const query = this.payrollRepository.createQueryBuilder('payroll')
+      .leftJoinAndSelect('payroll.employee', 'employee')
+      .leftJoinAndSelect('employee.user', 'user');
+
+    // 2. Admin Case: Filter by Company
+    if (companyId && companyId !== 'undefined') {
+      query.andWhere('payroll.companyId = :companyId', { companyId });
+    }
+
+    // 3. Employee Case: Filter by Employee (User ID or Profile ID)
+    else if (employeeId && employeeId !== 'undefined') {
+      // Check if the ID is a UserID or EmployeeID
+      const employee = await this.employeeRepository.findOne({
+        where: [{ id: employeeId }, { userId: employeeId }]
+      });
+
+      const finalId = employee ? employee.id : employeeId;
+      query.andWhere('payroll.employeeId = :employeeId', { employeeId: finalId });
+    }
+
+    // 4. Month & Year Filters
+    if (month) {
+      query.andWhere('payroll.month = :month', { month: Number(month) });
+    }
+    if (year) {
+      query.andWhere('payroll.year = :year', { year: Number(year) });
+    }
+
+    // 5. IMPORTANT: Duplicate records hatao
+    // TypeORM ka getMany() QueryBuilder ke saath internally handles mapping, 
+    // but hum explicitly order handle karenge
+    query.orderBy('payroll.year', 'DESC')
+      .addOrderBy('payroll.month', 'DESC')
+      .addOrderBy('payroll.id', 'ASC'); // ID par order dene se duplicates identify karna easy hota hai
+
+    const results = await query.getMany();
+
+    // 6. Final Safety Net: Agar abhi bhi DB level se duplicates aa rahe hain (Unique IDs filter)
+    const uniquePayrolls = Array.from(new Map(results.map(item => [item.id, item])).values());
+
+    return uniquePayrolls;
   }
-
-  // 4. Month & Year Filters
-  if (month) {
-    query.andWhere('payroll.month = :month', { month: Number(month) });
-  }
-  if (year) {
-    query.andWhere('payroll.year = :year', { year: Number(year) });
-  }
-
-  // 5. IMPORTANT: Duplicate records hatao
-  // TypeORM ka getMany() QueryBuilder ke saath internally handles mapping, 
-  // but hum explicitly order handle karenge
-  query.orderBy('payroll.year', 'DESC')
-       .addOrderBy('payroll.month', 'DESC')
-       .addOrderBy('payroll.id', 'ASC'); // ID par order dene se duplicates identify karna easy hota hai
-
-  const results = await query.getMany();
-
-  // 6. Final Safety Net: Agar abhi bhi DB level se duplicates aa rahe hain (Unique IDs filter)
-  const uniquePayrolls = Array.from(new Map(results.map(item => [item.id, item])).values());
-
-  return uniquePayrolls;
-}
 
   async findEmployeeByUserId(userId: string) {
     return this.employeeRepository.findOne({
@@ -148,6 +148,22 @@ async findAllPayroll(
       return await this.expenseRepository.save(newExpense);
     } catch (error) {
       console.error('ERROR: Failed to save expense:', error);
+      throw error;
+    }
+  }
+
+  async updateExpense(id: string, data: Partial<Expense>): Promise<Expense> {
+    const expense = await this.expenseRepository.findOne({ where: { id } });
+
+    if (!expense) {
+      throw new NotFoundException(`Expense with ID ${id} not found`);
+    }
+
+    try {
+      Object.assign(expense, data);
+      return await this.expenseRepository.save(expense);
+    } catch (error) {
+      console.error('ERROR: Failed to update expense:', error);
       throw error;
     }
   }
@@ -309,6 +325,7 @@ async findAllPayroll(
     // 1️⃣ Find attendance
     const attendance = await this.attendanceRepository.findOne({
       where: { id: attendanceId },
+      relations: ['employee', 'employee.user']
     });
 
     if (!attendance) throw new Error('Attendance not found');
@@ -317,6 +334,7 @@ async findAllPayroll(
     // 2️⃣ Find employee
     const emp = await this.employeeRepository.findOne({
       where: { id: attendance.employeeId },
+      relations: ['user']
     });
 
     if (!emp) throw new Error('Employee not found');
@@ -378,13 +396,54 @@ async findAllPayroll(
       status: 'unpaid',
     });
 
-    await this.payrollRepository.save(payroll);
+    const savedPayroll = await this.payrollRepository.save(payroll);
+
+    // 7️⃣ Send Notification 🔔
+    try {
+      await this.notificationsService.send({
+        title: 'Payroll Generated',
+        message: `Your payroll for ${month}/${year} has been generated. Net Salary: ₹${netSalary.toFixed(2)}.`,
+        type: 'both',
+        recipientFilter: 'employees',
+        recipientIds: [emp.userId],
+        companyId: emp.companyId,
+        metadata: {
+          type: 'PAYROLL_GENERATED',
+          month,
+          year,
+          netSalary
+        }
+      });
+      console.log(`[FinanceService] Notification sent to employee ${emp.id}`);
+    } catch (err) {
+      console.error(`[FinanceService] Failed to notify employee ${emp.id}:`, err.message);
+    }
+
+    // 8️⃣ Send Email 📧
+    try {
+      const empEmail = emp.user?.email;
+      if (empEmail) {
+        await this.mailService.sendPayrollEmail(empEmail, {
+          employeeName: `${emp.user?.firstName} ${emp.user?.lastName}`,
+          month,
+          year,
+          netSalary: netSalary,
+        });
+        console.log(`[FinanceService] ✅ Email sent to employee ${emp.id} (${empEmail})`);
+      } else {
+        console.warn(`[FinanceService] ⚠️ No email found for employee ${emp.id}`);
+      }
+    } catch (emailErr) {
+      console.error(`[FinanceService] ❌ Failed to send payroll email to employee ${emp.id}:`, emailErr.message);
+    }
 
     // 7️⃣ Return detailed info
     return {
-      message: 'Payroll Generated ',
+      message: 'Payroll Generated successfully with notifications',
       payroll: {
+        id: savedPayroll.id,
         employeeId: emp.id,
+        employeeName: `${emp.user?.firstName} ${emp.user?.lastName}`,
         basicSalary,
         leaveDeduction,
         halfDeduction,
@@ -392,27 +451,88 @@ async findAllPayroll(
         netSalary,
         month,
         year,
+        emailSent: !!emp.user?.email,
+        notificationSent: true
       },
     };
   }
 
   async generatePayrollSingle(attendanceId: string) {
     const attendance = await this.attendanceRepository.findOne({
-      where: { id: attendanceId }
+      where: { id: attendanceId },
+      relations: ['employee', 'employee.user']
     });
 
     if (!attendance) throw new Error('Attendance not found');
 
-    return this.payrollRepository.save({
-      employeeId: attendance.employeeId,
-      companyId: attendance.employee?.companyId || attendance.employeeId, // Fallback logic
+    const emp = attendance.employee;
+    if (!emp) throw new Error('Employee not found for attendance');
 
+    const payroll = this.payrollRepository.create({
+      employeeId: attendance.employeeId,
+      companyId: emp.companyId,
       basicSalary: 30000,
       netSalary: 30000,
       month: new Date().getMonth() + 1,
       year: new Date().getFullYear(),
       status: 'unpaid'
     });
+
+    const savedPayroll = await this.payrollRepository.save(payroll);
+
+    // Send Notification
+    try {
+      await this.notificationsService.send({
+        title: 'Payroll Generated',
+        message: `Your payroll for ${payroll.month}/${payroll.year} has been generated. Net Salary: ₹30000.00.`,
+        type: 'both',
+        recipientFilter: 'employees',
+        recipientIds: [emp.userId],
+        companyId: emp.companyId,
+        metadata: {
+          type: 'PAYROLL_GENERATED',
+          month: payroll.month,
+          year: payroll.year,
+          netSalary: 30000
+        }
+      });
+      console.log(`[FinanceService] Notification sent to employee ${emp.id}`);
+    } catch (err) {
+      console.error(`[FinanceService] Failed to notify employee ${emp.id}:`, err.message);
+    }
+
+    // Send Email
+    try {
+      const empEmail = emp.user?.email;
+      if (empEmail) {
+        await this.mailService.sendPayrollEmail(empEmail, {
+          employeeName: `${emp.user?.firstName} ${emp.user?.lastName}`,
+          month: payroll.month,
+          year: payroll.year,
+          netSalary: 30000,
+        });
+        console.log(`[FinanceService] ✅ Email sent to employee ${emp.id} (${empEmail})`);
+      } else {
+        console.warn(`[FinanceService] ⚠️ No email found for employee ${emp.id}`);
+      }
+    } catch (emailErr) {
+      console.error(`[FinanceService] ❌ Failed to send payroll email to employee ${emp.id}:`, emailErr.message);
+    }
+
+    return {
+      message: 'Single payroll generated with notifications',
+      payroll: {
+        id: savedPayroll.id,
+        employeeId: emp.id,
+        employeeName: `${emp.user?.firstName} ${emp.user?.lastName}`,
+        basicSalary: 30000,
+        netSalary: 30000,
+        month: payroll.month,
+        year: payroll.year,
+        emailSent: !!emp.user?.email,
+        notificationSent: true
+      }
+    };
   }
 
   async generatePayrollSlip(payrollId: string): Promise<Buffer> {

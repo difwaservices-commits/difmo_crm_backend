@@ -1,9 +1,6 @@
 import { Controller, Post, Get, Body, Param, Query, Patch, UseGuards, Delete, BadRequestException } from '@nestjs/common';
 import { JobsService } from './jobs.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-
 @Controller('jobs')
-@UseGuards(JwtAuthGuard)
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 

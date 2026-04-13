@@ -1,0 +1,324 @@
+/**
+ * PAYROLL EMAIL API REFERENCE
+ * Testing ramjeekumaryadav558@gmail.com
+ * 
+ * This file documents all API endpoints needed to test payroll email sending
+ */
+
+// ============================================================================
+// 1. LOGIN
+// ============================================================================
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@difmo.com",
+  "password": "Admin@123"
+}
+
+Response:
+{
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+    "user": { ... }
+  }
+}
+
+Save: access_token for next requests
+
+
+// ============================================================================
+// 2. GET ALL EMPLOYEES
+// ============================================================================
+GET /employees
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+Response:
+{
+  "data": [
+    {
+      "id": "emp-123",
+      "salary": 50000,
+      "user": {
+        "id": "user-123",
+        "firstName": "Ramjeekumar",
+        "lastName": "Yadav",
+        "email": "ramjeekumaryadav558@gmail.com"
+      },
+      "designation": "Software Developer"
+    },
+    ... more employees
+  ]
+}
+
+Save: Employee ID (id: "emp-123")
+
+
+// ============================================================================
+// 3. GET ATTENDANCE FOR EMPLOYEE
+// ============================================================================
+GET /attendance?employeeId=emp-123
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+Response:
+{
+  "data": [
+    {
+      "id": "att-456",
+      "date": "2026-04-10",
+      "status": "present",
+      "checkInTime": "2026-04-10T09:00:00.000Z",
+      "checkOutTime": "2026-04-10T17:30:00.000Z"
+    },
+    ... more attendance records
+  ]
+}
+
+Save: Attendance ID (id: "att-456")
+
+
+// ============================================================================
+// 4. GENERATE PAYROLL (THIS SENDS EMAIL)
+// ============================================================================
+POST /finance/generate
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "attendanceId": "att-456",
+  "month": 4,
+  "year": 2026
+}
+
+Response:
+{
+  "data": {
+    "message": "Payroll Generated successfully with notifications",
+    "payroll": {
+      "id": "payroll-789",
+      "employeeId": "emp-123",
+      "employeeName": "Ramjeekumar Yadav",
+      "basicSalary": 50000,
+      "leaveDeduction": 0,
+      "halfDeduction": 0,
+      "overtimePay": 0,
+      "netSalary": 50000,
+      "month": 4,
+      "year": 2026,
+      "emailSent": true,          👈 Check this is TRUE
+      "notificationSent": true    👈 Check this is TRUE
+    }
+  }
+}
+
+
+// ============================================================================
+// EXPECTED BACKEND CONSOLE LOGS (SUCCESS)
+// ============================================================================
+
+[FinanceService] Notification sent to employee emp-123
+[FinanceService] ✅ Email sent to employee emp-123 (ramjeekumaryadav558@gmail.com)
+[FinanceService] Email sending completed
+
+// At the response level:
+"emailSent": true
+"notificationSent": true
+
+
+// ============================================================================
+// EXPECTED BACKEND CONSOLE LOGS (FAILURE)
+// ============================================================================
+
+[FinanceService] ⚠️ No email found for employee emp-123
+// → Employee doesn't have a user email address
+
+[FinanceService] ❌ Failed to send payroll email to employee emp-123: EAUTH Login failed
+// → Gmail credentials are incorrect
+
+[FinanceService] Failed to notify employee emp-123: Cannot read property 'send' of undefined
+// → NotificationService is not properly initialized
+
+[FinanceService] ❌ Failed to send payroll email to employee emp-123: ENOTFOUND smtp.gmail.com
+// → Network issue connecting to Gmail SMTP server
+
+
+// ============================================================================
+// CURL COMMANDS FOR MANUAL TESTING
+// ============================================================================
+
+// Step 1: Login
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@difmo.com","password":"Admin@123"}'
+
+// Step 2: Get Employees (replace TOKEN with actual token)
+curl -X GET http://localhost:3000/employees \
+  -H "Authorization: Bearer TOKEN"
+
+// Step 3: Get Attendance (replace TOKEN and EMPLOYEE_ID)
+curl -X GET "http://localhost:3000/attendance?employeeId=EMPLOYEE_ID" \
+  -H "Authorization: Bearer TOKEN"
+
+// Step 4: Generate Payroll (replace with actual values)
+curl -X POST http://localhost:3000/finance/generate \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "attendanceId": "ATTENDANCE_ID",
+    "month": 4,
+    "year": 2026
+  }'
+
+
+// ============================================================================
+// POSTMAN COLLECTION IMPORT
+// ============================================================================
+
+{
+  "info": { "name": "Payroll Email Test" },
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"admin@difmo.com\",\"password\":\"Admin@123\"}"
+        }
+      }
+    },
+    {
+      "name": "Get Employees",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/employees",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ]
+      }
+    },
+    {
+      "name": "Get Attendance",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/attendance?employeeId={{employee_id}}",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ]
+      }
+    },
+    {
+      "name": "Generate Payroll (SENDS EMAIL)",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/finance/generate",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"attendanceId\":\"{{attendance_id}}\",\"month\":4,\"year\":2026}"
+        }
+      }
+    }
+  ]
+}
+
+
+// ============================================================================
+// VALIDATION CHECKLIST
+// ============================================================================
+
+☑️ Email in response: emailSent: true
+☑️ Backend log: "[FinanceService] Email sent to employee"
+☑️ No error log: "[FinanceService] Failed to send"
+☑️ Inbox receives email within 5 minutes
+☑️ Email contains employee name and salary
+☑️ Email subject: "Payroll Generated - MM/YYYY"
+
+
+// ============================================================================
+// TROUBLESHOOTING BY ERROR RESPONSE
+// ============================================================================
+
+Status 401 Unauthorized
+  → Invalid or expired token
+  → Solution: Login again and get new token
+
+Status 404 Not Found
+  → Endpoint or resource not found
+  → Check endpoint URL spelling
+  → Check employee/attendance ID exists
+
+Status 500 Internal Server Error
+  → Mail service error
+  → Check MAIL_* environment variables
+  → Check backend logs for specific error
+
+Status 400 Bad Request
+  → Invalid payload format
+  → Check attendanceId is string format
+  → Check month/year are valid numbers (1-12 for month)
+
+
+// ============================================================================
+// ENVIRONMENT VARIABLES REQUIRED (.env)
+// ============================================================================
+
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=465
+MAIL_USER=ramjeekumaryadav558@gmail.com
+MAIL_PASS=xyzw abcd efgh ijkl
+// ↑ This is 16-character Gmail App Password (not regular password)
+
+
+// ============================================================================
+// GMAIL APP PASSWORD SETUP
+// ============================================================================
+
+1. Go to: https://myaccount.google.com/apppasswords
+2. Make sure 2-Step Verification is enabled
+3. Select "Mail" as app
+4. Select "Windows" as device
+5. Google will generate 16-character password
+6. Copy password (without spaces) to MAIL_PASS in .env
+7. Restart backend: npm start
+
+
+// ============================================================================
+// EMAIL TEMPLATE OUTPUT
+// ============================================================================
+
+From: noreply@example.com
+To: ramjeekumaryadav558@gmail.com
+Subject: Payroll Generated - 4/2026
+
+Dear Ramjeekumar,
+
+Your payroll for April 2026 has been generated.
+
+Net Salary: ₹50,000.00
+
+Please contact HR for any questions regarding your payroll.
+
+Best regards,
+Payroll System
+
+
+// ============================================================================
+// SUCCESS INDICATORS
+// ============================================================================
+
+✅ Response includes "emailSent": true
+✅ Backend console shows email sent confirmation
+✅ No errors in backend logs
+✅ Email arrives in recipient inbox within 5 min
+✅ Or in spam folder (mark as not spam)
+
+
+Last Updated: April 13, 2026
+Tested for: ramjeekumaryadav558@gmail.com

@@ -9,13 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AccessControlService } from './access-control.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AbilitiesGuard } from './abilities.guard';
 import { CheckAbilities } from './abilities.decorator';
 import { Action } from './ability.factory';
 
 @Controller('access-control')
-@UseGuards(JwtAuthGuard)
 export class AccessControlController {
   constructor(private readonly accessControlService: AccessControlService) {}
 
