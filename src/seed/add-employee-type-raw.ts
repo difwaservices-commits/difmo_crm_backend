@@ -3,6 +3,7 @@ dotenv.config();
 
 const dbUrl = process.env.DATABASE_URL || '';
 const isPostgres = dbUrl.startsWith('postgres');
+//note
 
 async function run() {
   if (isPostgres) {
