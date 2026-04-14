@@ -4,7 +4,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 @Injectable()
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
-
+//this is for testing
   async sendLeaveStatusEmail(to: string, data: { employeeName: string; status: string; startDate: string; endDate: string; comment?: string }) {
     await this.mailerService.sendMail({
       to,
