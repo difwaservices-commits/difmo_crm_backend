@@ -354,7 +354,10 @@ export class ClientsService implements OnModuleInit {
     </html>
     `;
 
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+    await page.setContent(htmlContent, { 
+      waitUntil: "domcontentloaded",
+      timeout: 10000 
+    });
     const pdfBuffer = await page.pdf({ 
       format: 'A4', 
       printBackground: true,
@@ -369,12 +372,19 @@ export class ClientsService implements OnModuleInit {
   // ==========================================
   async sendInvoice(clientId: string, companyId: string, invoiceData: any) {
     console.log(`[ClientsService] Initiate sendInvoice for client: ${clientId}, company: ${companyId}`);
-    const client = await this.clientRepo.findOneBy({ id: clientId });
+    
+    // Find client if ID is provided, but don't fail if null or missing
+    const client = clientId && clientId !== 'null' ? await this.clientRepo.findOneBy({ id: clientId }) : null;
+    
     if (!client) {
-      console.error(`[ClientsService] Client NOT FOUND: ${clientId}`);
-      throw new NotFoundException('Client reference missing');
+      console.log(`[ClientsService] Proceeding with Virtual Client logic (No DB record for ${invoiceData.clientEmail})`);
+    } else {
+      console.log(`[ClientsService] Resolved DB Client: ${client.email}`);
     }
-    console.log(`[ClientsService] Resolved Client Email: ${client.email}`);
+
+    // Resolve target identity for PDF and Email
+    const targetEmail = client?.email || invoiceData.clientEmail;
+    const targetName = client?.name || invoiceData.clientName || 'Valued Client';
 
     // FETCH THE DYNAMIC DETAILS FROM DATABASE
     const companyDocs = await this.gstService.findOne(companyId);
@@ -390,13 +400,17 @@ export class ClientsService implements OnModuleInit {
       amount: baseAmount,
       status: 'Pending',
       client,
+      clientEmail: targetEmail,
+      clientName: targetName,
+      projectId: invoiceData.projectId,
+      projectName: invoiceData.projectName,
     });
     const savedInvoice = await this.invoiceRepo.save(invoice);
 
     try {
       console.log(`[ClientsService] Generating PDF for Invoice #${savedInvoice.invoiceNumber}`);
       const pdfBuffer = await this.generateInvoicePdf(
-        client, 
+        client || { name: targetName, email: targetEmail }, 
         savedInvoice, 
         items, 
         baseAmount, 
@@ -405,19 +419,19 @@ export class ClientsService implements OnModuleInit {
       );
       console.log(`[ClientsService] PDF Generated, size: ${pdfBuffer.length} bytes`);
 
-      console.log(`[ClientsService] Dispatching email to: ${client.email} from: ramjeekumaryadav733@gmail.com`);
+      console.log(`[ClientsService] Dispatching email to: ${targetEmail} from: ramjeekumaryadav733@gmail.com`);
       
       const info = await this.transporter.sendMail({
         from: '"DIFMO Billing Team" <ramjeekumaryadav733@gmail.com>',
-        to: client.email,
-        subject: `ACTION REQUIRED: Invoice #${savedInvoice.invoiceNumber} for ${client.name}`,
+        to: targetEmail,
+        subject: `ACTION REQUIRED: Invoice #${savedInvoice.invoiceNumber} for ${targetName}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; background: white;">
             <div style="background: #0f172a; padding: 40px; text-align: center; border-bottom: 4px solid #f97316;">
               <h2 style="color: white; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Payment Request</h2>
             </div>
             <div style="padding: 40px; color: #1f2937;">
-              <p style="font-size: 16px;">Hello <b>${client.name}</b>,</p>
+              <p style="font-size: 16px;">Hello <b>${targetName}</b>,</p>
               <p>The billing department of <b>${companyDocs?.companyName || 'DIFMO Private Limited'}</b> has issued a new invoice for your ongoing project services.</p>
               
               <div style="background: #f9fafb; border-radius: 12px; padding: 25px; margin: 30px 0; border: 1px solid #e5e7eb;">

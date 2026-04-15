@@ -38,7 +38,7 @@ export class Client {
 
   @OneToMany(() => Project, (project) => project.client)
   projects: Project[];
-  
+
   // Status & Metadata
   @Column({ default: 'Lead' })
   status: string;
@@ -60,6 +60,12 @@ export class Client {
 
   @OneToMany(() => Invoice, (invoice) => invoice.client)
   invoices: Invoice[];
+
+  @Column({ nullable: true })
+  invoiceMessage: string;
+
+  @Column({ nullable: true })
+  companyId: string;
 
   @CreateDateColumn()
   createdAt: Date;

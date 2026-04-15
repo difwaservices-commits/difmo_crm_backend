@@ -40,9 +40,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AllProject } from './modules/project/project.entity';
 import { AllProjectModule } from './modules/project/project.module';
 import { ClientsModule } from './modules/clients/clients.module';
-import { Client as CRMClient} from './modules/clients/client.entity';
+import { Client } from './modules/clients/client.entity';
 // import { UploadModule } from './modules/upload/upload.module';
-import { Client  } from './modules/projects/entities/client.entity';
 import { Invoice } from './modules/invoices/invoice.entity';
 import { CompaniesModule } from './modules/companyGstDocs/copmanies.Gst.modules';
 import { CompanyGst } from './modules/companyGstDocs/company.Gst.entity';
@@ -99,12 +98,11 @@ import { JobMessage } from './modules/jobs/entities/message.entity';
           AllProject,
           Notification,
           FcmToken,
-         CRMClient,
-         Invoice,
-         CompanyGst,
-         Job,
-         Application,
-         JobMessage,
+          Invoice,
+          CompanyGst,
+          Job,
+          Application,
+          JobMessage,
         ];
         if (dbUrl) {
           return {

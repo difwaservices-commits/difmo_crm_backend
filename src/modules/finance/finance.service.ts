@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Payroll } from './entities/payroll.entity';
 import { Expense } from './entities/expense.entity';
 import { Company } from '../companies/company.entity';
@@ -57,7 +57,7 @@ export class FinanceService {
   // Payroll
   async createPayroll(data: Partial<Payroll>): Promise<Payroll> {
     const payroll = await this.payrollRepository.save(this.payrollRepository.create(data));
-    
+
     // 🔥 Real-time Notification to Employee on Creation
     try {
       const emp = await this.employeeRepository.findOne({
@@ -91,56 +91,59 @@ export class FinanceService {
   // }
 
   // finance.service.ts
-async findAllPayroll(
-  employeeId?: string,
-  month?: number,
-  year?: number,
-  companyId?: string,
-): Promise<Payroll[]> {
-  
-  // 1. Repository ki jagah QueryBuilder use karo duplicates se bachne ke liye
-  const query = this.payrollRepository.createQueryBuilder('payroll')
-    .leftJoinAndSelect('payroll.employee', 'employee')
-    .leftJoinAndSelect('employee.user', 'user');
+  async findAllPayroll(
+    employeeId?: string,
+    month?: number,
+    year?: number,
+    companyId?: string,
+  ): Promise<Payroll[]> {
 
-  // 2. Admin Case: Filter by Company
-  if (companyId && companyId !== 'undefined') {
-    query.andWhere('payroll.companyId = :companyId', { companyId });
-  } 
-  
-  // 3. Employee Case: Filter by Employee (User ID or Profile ID)
-  else if (employeeId && employeeId !== 'undefined') {
-    // Check if the ID is a UserID or EmployeeID
-    const employee = await this.employeeRepository.findOne({
-      where: [{ id: employeeId }, { userId: employeeId }] 
-    });
-    
-    const finalId = employee ? employee.id : employeeId;
-    query.andWhere('payroll.employeeId = :employeeId', { employeeId: finalId });
+    // 1. Repository ki jagah QueryBuilder use karo duplicates se bachne ke liye
+    const query = this.payrollRepository.createQueryBuilder('payroll')
+      .leftJoinAndSelect('payroll.employee', 'employee')
+      .leftJoinAndSelect('employee.user', 'user');
+
+    // 2. Admin Case: Filter by Company (look at both payroll.companyId and employee.companyId for maximum resilience)
+    if (companyId && companyId !== 'undefined') {
+      query.andWhere(new Brackets(qb => {
+        qb.where('payroll.companyId = :companyId', { companyId })
+          .orWhere('employee.companyId = :companyId', { companyId });
+      }));
+    }
+
+    // 3. Employee Case: Filter by Employee (User ID or Profile ID)
+    if (employeeId && employeeId !== 'undefined') {
+      // Check if the ID is a UserID or EmployeeID
+      const employee = await this.employeeRepository.findOne({
+        where: [{ id: employeeId }, { userId: employeeId }]
+      });
+
+      const finalId = employee ? employee.id : employeeId;
+      query.andWhere('payroll.employeeId = :employeeId', { employeeId: finalId });
+    }
+
+    // 4. Month & Year Filters
+    if (month) {
+      query.andWhere('payroll.month = :month', { month: Number(month) });
+    }
+    if (year) {
+      query.andWhere('payroll.year = :year', { year: Number(year) });
+    }
+
+    // 5. IMPORTANT: Duplicate records hatao
+    // TypeORM ka getMany() QueryBuilder ke saath internally handles mapping, 
+    // but hum explicitly order handle karenge
+    query.orderBy('payroll.year', 'DESC')
+      .addOrderBy('payroll.month', 'DESC')
+      .addOrderBy('payroll.id', 'ASC'); // ID par order dene se duplicates identify karna easy hota hai
+
+    const results = await query.getMany();
+
+    // 6. Final Safety Net: Agar abhi bhi DB level se duplicates aa rahe hain (Unique IDs filter)
+    const uniquePayrolls = Array.from(new Map(results.map(item => [item.id, item])).values());
+
+    return uniquePayrolls;
   }
-
-  // 4. Month & Year Filters
-  if (month) {
-    query.andWhere('payroll.month = :month', { month: Number(month) });
-  }
-  if (year) {
-    query.andWhere('payroll.year = :year', { year: Number(year) });
-  }
-
-  // 5. IMPORTANT: Duplicate records hatao
-  // TypeORM ka getMany() QueryBuilder ke saath internally handles mapping, 
-  // but hum explicitly order handle karenge
-  query.orderBy('payroll.year', 'DESC')
-       .addOrderBy('payroll.month', 'DESC')
-       .addOrderBy('payroll.id', 'ASC'); // ID par order dene se duplicates identify karna easy hota hai
-
-  const results = await query.getMany();
-
-  // 6. Final Safety Net: Agar abhi bhi DB level se duplicates aa rahe hain (Unique IDs filter)
-  const uniquePayrolls = Array.from(new Map(results.map(item => [item.id, item])).values());
-
-  return uniquePayrolls;
-}
 
   async findEmployeeByUserId(userId: string) {
     return this.employeeRepository.findOne({
@@ -410,15 +413,18 @@ async findAllPayroll(
 
   async generatePayrollSingle(attendanceId: string) {
     const attendance = await this.attendanceRepository.findOne({
-      where: { id: attendanceId }
+      where: { id: attendanceId },
+      relations: ['employee']
     });
 
     if (!attendance) throw new Error('Attendance not found');
+    if (!attendance.employee) throw new Error('Employee not found for this attendance');
+
+    const companyId = attendance.employee.companyId;
 
     return this.payrollRepository.save({
       employeeId: attendance.employeeId,
-      companyId: attendance.employee?.companyId || attendance.employeeId, // Fallback logic
-
+      companyId: companyId,
       basicSalary: 30000,
       netSalary: 30000,
       month: new Date().getMonth() + 1,
@@ -536,6 +542,13 @@ async findAllPayroll(
         currency: targetCurrency.toUpperCase()
       };
     });
+  }
+
+  async deleteExpense(id: string): Promise<{ message: string }> {
+    const expense = await this.expenseRepository.findOne({ where: { id } });
+    if (!expense) throw new NotFoundException('Expense not found');
+    await this.expenseRepository.remove(expense);
+    return { message: 'Expense deleted successfully' };
   }
 
   // turnover & summary

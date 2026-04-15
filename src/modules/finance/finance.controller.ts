@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -37,24 +38,24 @@ export class FinanceController {
     return this.financeService.markPayrollPaid(body.payrollId);
   }
 
-// FinanceController.ts
-@Get('payroll')
-@CheckAbilities({ action: Action.Read, subject: 'payroll' })
-findAllPayroll(
-  @Query('employeeId') employeeId?: string,
-  @Query('companyId') companyId?: string, // 👈 Admin ke liye ye add kiya
-  @Query('month') month?: number,
-  @Query('year') year?: number,
-  @Request() req?: any 
-) {
-  // LOGIC: Agar na employeeId hai na companyId, toh logged-in user (Employee) ka data dikhao
-  if (!employeeId && !companyId) {
+  // FinanceController.ts
+  @Get('payroll')
+  @CheckAbilities({ action: Action.Read, subject: 'payroll' })
+  findAllPayroll(
+    @Query('employeeId') employeeId?: string,
+    @Query('companyId') companyId?: string, // 👈 Admin ke liye ye add kiya
+    @Query('month') month?: number,
+    @Query('year') year?: number,
+    @Request() req?: any
+  ) {
+    // LOGIC: Agar na employeeId hai na companyId, toh logged-in user (Employee) ka data dikhao
+    if (!employeeId && !companyId) {
       employeeId = req.user.employeeId || req.user.id;
+    }
+
+    // Ab service ko 4 arguments bhejo
+    return this.financeService.findAllPayroll(employeeId, month, year, companyId);
   }
-  
-  // Ab service ko 4 arguments bhejo
-  return this.financeService.findAllPayroll(employeeId, month, year, companyId);
-}
 
 
   @Post('expenses')
@@ -72,20 +73,26 @@ findAllPayroll(
     return this.financeService.findAllExpenses(companyId, currency);
   }
 
-@Get('payroll/:id/slip')
-async getPayrollSlip(
-  @Param('id') payrollId: string,
-  @Res({ passthrough: false }) res: Response
-) {
-  const pdfBuffer = await this.financeService.generatePayrollSlip(payrollId);
+  @Delete('expenses/:id')
+  @CheckAbilities({ action: Action.Delete, subject: 'expense' })
+  deleteExpense(@Param('id') id: string) {
+    return this.financeService.deleteExpense(id);
+  }
 
-  res.set({
-    'Content-Type': 'application/pdf',
-    'Content-Disposition': `attachment; filename=payroll_${payrollId}.pdf`,
-  });
+  @Get('payroll/:id/slip')
+  async getPayrollSlip(
+    @Param('id') payrollId: string,
+    @Res({ passthrough: false }) res: Response
+  ) {
+    const pdfBuffer = await this.financeService.generatePayrollSlip(payrollId);
 
-  return res.end(pdfBuffer); //  use end instead of send
-}
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=payroll_${payrollId}.pdf`,
+    });
+
+    return res.end(pdfBuffer); //  use end instead of send
+  }
 
   @Post('generate')
   generatePayroll(

@@ -1,25 +1,15 @@
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const emails = [
-  'palrahul95987@gmail.com',
-  'sonivermasoni55@gmail.com',
-  'khushimy2006@gmail.com'
-];
-
-const NEW_PASSWORD = 'welcome123';
 const DATABASE_URL = 'postgresql://neondb_owner:npg_EnjzltFx6X2Q@ep-still-shape-a8fph0be-pooler.eastus2.azure.neon.tech/difmocrm_prod?sslmode=require';
 
 async function main() {
-  const hash = await bcrypt.hash(NEW_PASSWORD, 10);
   const client = new Client({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
   await client.connect();
-  console.log('Connected to DB');
 
-  for (const email of emails) {
-    const res = await client.query('UPDATE "user" SET "password" = $1 WHERE "email" = $2', [hash, email]);
-    console.log(`${email} -> ${res.rowCount > 0 ? 'UPDATED' : 'NOT FOUND'}`);
-  }
+  const adminHash = await bcrypt.hash('password123', 10);
+  const r = await client.query('UPDATE "user" SET "password" = $1 WHERE "email" = $2', [adminHash, 'admin@difmo.com']);
+  console.log(`admin@difmo.com -> ${r.rowCount > 0 ? 'UPDATED to password123 ✓' : 'NOT FOUND'}`);
 
   await client.end();
   console.log('Done.');

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Client } from './entities/client.entity';
+import { Client } from '../clients/client.entity';
 import { Project } from './entities/project.entity';
 import { Task } from './entities/task.entity';
 import { NotificationsService } from '../notifications/notifications.service';

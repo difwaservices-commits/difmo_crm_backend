@@ -19,6 +19,18 @@ export class Invoice {
   @CreateDateColumn()
   issuedAt: Date;
 
-  @ManyToOne(() => Client, (client) => client.invoices)
-  client: Client;
+  @ManyToOne(() => Client, (client) => client.invoices, { nullable: true })
+  client: Client | null;
+
+  @Column({ nullable: true })
+  clientEmail: string;
+
+  @Column({ nullable: true })
+  clientName: string;
+
+  @Column({ nullable: true })
+  projectId: string;
+
+  @Column({ nullable: true })
+  projectName: string;
 }

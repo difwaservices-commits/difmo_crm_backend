@@ -7,7 +7,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { Company } from '../../companies/company.entity';
-import { Client } from './client.entity';
+import { Client } from '../../clients/client.entity';
 
 @Entity()
 export class Project {
@@ -37,7 +37,7 @@ export class Project {
   @Column({ nullable: true })
   contactInfo: string;
 
-  
+
 
   // Timeline
   @Column({ nullable: true, type: 'date' })
