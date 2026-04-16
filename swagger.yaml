@@ -7,18 +7,6 @@ paths:
       responses:
         "200":
           description: ""
-  /dashboard/metrics:
-    get:
-      operationId: DashboardController_getMetrics
-      parameters:
-        - name: companyId
-          required: true
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: ""
   /auth/login:
     post:
       operationId: AuthController_login
@@ -295,6 +283,71 @@ paths:
           in: path
           schema:
             type: string
+      responses:
+        "200":
+          description: ""
+  /notifications/fcm-token:
+    post:
+      operationId: NotificationsController_saveFcmToken
+      parameters: []
+      responses:
+        "201":
+          description: ""
+    delete:
+      operationId: NotificationsController_removeFcmToken
+      parameters: []
+      responses:
+        "200":
+          description: ""
+  /notifications/send:
+    post:
+      operationId: NotificationsController_send
+      parameters: []
+      responses:
+        "201":
+          description: ""
+  /notifications/history:
+    get:
+      operationId: NotificationsController_getHistory
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /notifications/mine:
+    get:
+      operationId: NotificationsController_getMyNotifications
+      parameters: []
+      responses:
+        "200":
+          description: ""
+  /notifications/stats:
+    get:
+      operationId: NotificationsController_getStats
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /notifications/mark-read:
+    post:
+      operationId: NotificationsController_markRead
+      parameters: []
+      responses:
+        "201":
+          description: ""
+  /notifications/clear:
+    delete:
+      operationId: NotificationsController_clearAll
+      parameters: []
       responses:
         "200":
           description: ""
@@ -615,6 +668,11 @@ paths:
           in: query
           schema:
             type: string
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
         - name: month
           required: true
           in: query
@@ -653,6 +711,18 @@ paths:
         - name: currency
           required: true
           in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /finance/expenses/{id}:
+    delete:
+      operationId: FinanceController_deleteExpense
+      parameters:
+        - name: id
+          required: true
+          in: path
           schema:
             type: string
       responses:
@@ -789,62 +859,6 @@ paths:
       responses:
         "200":
           description: ""
-  /notifications/fcm-token:
-    post:
-      operationId: NotificationsController_saveFcmToken
-      parameters: []
-      responses:
-        "201":
-          description: ""
-    delete:
-      operationId: NotificationsController_removeFcmToken
-      parameters: []
-      responses:
-        "200":
-          description: ""
-  /notifications/send:
-    post:
-      operationId: NotificationsController_send
-      parameters: []
-      responses:
-        "201":
-          description: ""
-  /notifications/history:
-    get:
-      operationId: NotificationsController_getHistory
-      parameters:
-        - name: companyId
-          required: true
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: ""
-  /notifications/stats:
-    get:
-      operationId: NotificationsController_getStats
-      parameters:
-        - name: companyId
-          required: true
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: ""
-  /notifications/employees:
-    get:
-      operationId: NotificationsController_getEmployees
-      parameters:
-        - name: companyId
-          required: true
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: ""
   /api/clients:
     get:
       operationId: ClientsController_getAllClients
@@ -857,6 +871,40 @@ paths:
       parameters: []
       responses:
         "201":
+          description: ""
+  /api/clients/{id}:
+    get:
+      operationId: ClientsController_getOneClient
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+    patch:
+      operationId: ClientsController_updateClient
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+    delete:
+      operationId: ClientsController_deleteClient
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
           description: ""
   /api/clients/{id}/send-invoice:
     post:
@@ -898,6 +946,221 @@ paths:
               $ref: "#/components/schemas/CompanyDocsDto"
       responses:
         "200":
+          description: ""
+  /dashboard/metrics:
+    get:
+      operationId: DashboardController_getMetrics
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: userId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /dashboard/charts:
+    get:
+      operationId: DashboardController_getCharts
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /dashboard/feed:
+    get:
+      operationId: DashboardController_getFeed
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: userId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /dashboard/financials:
+    get:
+      operationId: DashboardController_getFinancials
+      parameters:
+        - name: companyId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /jobs:
+    post:
+      operationId: JobsController_createJob
+      parameters: []
+      responses:
+        "201":
+          description: ""
+    get:
+      operationId: JobsController_listJobs
+      parameters: []
+      responses:
+        "200":
+          description: ""
+  /jobs/{id}:
+    get:
+      operationId: JobsController_getJob
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+    patch:
+      operationId: JobsController_updateJob
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+    delete:
+      operationId: JobsController_deleteJob
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /jobs/{id}/applications:
+    post:
+      operationId: JobsController_createApplication
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+  /jobs/applications:
+    get:
+      operationId: JobsController_listApplications
+      parameters: []
+      responses:
+        "200":
+          description: ""
+  /jobs/applications/{id}/status:
+    patch:
+      operationId: JobsController_updateAppStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /jobs/messages:
+    post:
+      operationId: JobsController_createMessage
+      parameters: []
+      responses:
+        "201":
+          description: ""
+    get:
+      operationId: JobsController_listMessages
+      parameters: []
+      responses:
+        "200":
+          description: ""
+  /public/jobs:
+    get:
+      operationId: PublicJobsController_listJobs
+      parameters: []
+      responses:
+        "200":
+          description: ""
+    post:
+      operationId: PublicJobsController_createJob
+      parameters: []
+      responses:
+        "201":
+          description: ""
+  /public/jobs/applications:
+    get:
+      operationId: PublicJobsController_listApplications
+      parameters: []
+      responses:
+        "200":
+          description: ""
+  /public/jobs/{id}:
+    get:
+      operationId: PublicJobsController_getJob
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+    patch:
+      operationId: PublicJobsController_updateJob
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+    delete:
+      operationId: PublicJobsController_deleteJob
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  /public/jobs/{jobId}/applications:
+    post:
+      operationId: PublicJobsController_createApplication
+      parameters:
+        - name: jobId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
           description: ""
 info:
   title: Difmo CRM API

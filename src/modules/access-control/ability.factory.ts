@@ -34,6 +34,11 @@ export class AbilityFactory {
       can(Action.Manage, 'all');
     }
 
+    // Baseline rule: All users can read their own employee profile
+    if (user.id) {
+      can(Action.Read, 'employee' as any, { userId: user.id } as any);
+    }
+
     if (user.roles) {
       user.roles.forEach((role: Role) => {
         if (role.permissions) {

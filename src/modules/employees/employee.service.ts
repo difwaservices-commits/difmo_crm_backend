@@ -37,7 +37,7 @@ export class EmployeeService {
       } else {
         const newUser = await this.userService.create({
           email: createEmployeeDto.email,
-          password: createEmployeeDto.password || 'Welcome123!',
+          password: createEmployeeDto.password || 'welcome123',
           firstName: createEmployeeDto.firstName,
           lastName: createEmployeeDto.lastName,
           phone: createEmployeeDto.phone,
@@ -95,9 +95,9 @@ export class EmployeeService {
         const company = await this.companyRepository.findOne({
           where: { id: savedEmployee.companyId },
         });
-        
+
         console.log(`[EmployeeService] Attempting to send welcome email to ${createEmployeeDto.email}`);
-        
+
         await this.mailerService.sendMail({
           to: createEmployeeDto.email,
           subject: `Welcome to ${company?.name || 'the Team'}!`,
@@ -219,14 +219,23 @@ export class EmployeeService {
     }
 
     const sql = query.getSql();
-    console.log('[EmployeeService] Generated SQL:', sql);
+    const parameters = query.getParameters();
+    console.log('[EmployeeService] DIAGNOSTIC - SQL:', sql);
+    console.log('[EmployeeService] DIAGNOSTIC - Params:', JSON.stringify(parameters));
 
     const results = await query.getMany();
     console.log(
-      '[EmployeeService] Query returned',
+      '[EmployeeService] DIAGNOSTIC - Query returned',
       results.length,
       'employees',
     );
+    
+    if (results.length === 0 && filters?.userId) {
+       console.log(`[EmployeeService] DIAGNOSTIC - ALERT: No employee found for userId: ${filters.userId}`);
+       // Check if record exists regardless of filters
+       const rawCheck = await this.employeeRepository.findOne({ where: { userId: filters.userId } });
+       console.log('[EmployeeService] DIAGNOSTIC - Raw record check (ignoring filters):', rawCheck ? 'FOUND' : 'NOT FOUND');
+    }
 
     return results;
   }

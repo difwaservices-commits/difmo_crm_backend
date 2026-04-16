@@ -8,6 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/employee.dto';
@@ -19,7 +21,7 @@ import { AbilitiesGuard } from '../access-control/abilities.guard';
 @Controller('employees')
 @UseGuards(JwtAuthGuard, AbilitiesGuard)
 export class EmployeeController {
-  constructor(private readonly employeeService: EmployeeService) {}
+  constructor(private readonly employeeService: EmployeeService) { }
 
   @Post()
   @CheckAbilities({ action: Action.Create, subject: 'employee' })
@@ -27,11 +29,6 @@ export class EmployeeController {
     return this.employeeService.create(createEmployeeDto);
   }
 
-  @Post('fix-roles')
-  @CheckAbilities({ action: Action.Update, subject: 'employee' })
-  async fixRoles() {
-    return this.employeeService.fixEmployeeRoles();
-  }
 
   @Get('stats/count')
   @CheckAbilities({ action: Action.Read, subject: 'employee' })
@@ -41,8 +38,19 @@ export class EmployeeController {
   }
 
   @Get()
-  @CheckAbilities({ action: Action.Read, subject: 'employee' })
-  async findAll(@Query() query: any) {
+  async findAll(@Query() query: any, @Request() req: any) {
+    const user = req.user;
+    const isAdmin = user.roles?.some((role) =>
+      ['Super Admin', 'Admin'].includes(role.name),
+    );
+
+    // If not admin, they can ONLY read their own record
+    if (!isAdmin) {
+      if (!query.userId || query.userId !== user.id) {
+        throw new ForbiddenException('You can only access your own employee record.');
+      }
+    }
+
     const employees = await this.employeeService.findAll(query);
     return employees.map((emp) => this.transformEmployee(emp));
   }
@@ -69,38 +77,38 @@ export class EmployeeController {
       ...emp,
       user: emp.user
         ? {
-            id: emp.user.id,
-            email: emp.user.email,
-            firstName: emp.user.firstName,
-            lastName: emp.user.lastName,
-            name: `${emp.user.firstName || ''} ${emp.user.lastName || ''}`.trim(),
-            phone: emp.user.phone,
-            isActive: emp.user.isActive,
-            roles: emp.user.roles?.map((r) => ({
-              id: r.id,
-              name: r.name,
-              permissions: r.permissions,
-            })),
-            permissions: emp.user.permissions,
-          }
+          id: emp.user.id,
+          email: emp.user.email,
+          firstName: emp.user.firstName,
+          lastName: emp.user.lastName,
+          name: `${emp.user.firstName || ''} ${emp.user.lastName || ''}`.trim(),
+          phone: emp.user.phone,
+          isActive: emp.user.isActive,
+          roles: emp.user.roles?.map((r) => ({
+            id: r.id,
+            name: r.name,
+            permissions: r.permissions,
+          })),
+          permissions: emp.user.permissions,
+        }
         : null,
       company: emp.company
         ? {
-            id: emp.company.id,
-            name: emp.company.name,
-          }
+          id: emp.company.id,
+          name: emp.company.name,
+        }
         : null,
       department: emp.department
         ? {
-            id: emp.department.id,
-            name: emp.department.name,
-          }
+          id: emp.department.id,
+          name: emp.department.name,
+        }
         : null,
       designation: emp.designation
         ? {
-            id: emp.designation.id,
-            name: emp.designation.name,
-          }
+          id: emp.designation.id,
+          name: emp.designation.name,
+        }
         : null,
     };
   }

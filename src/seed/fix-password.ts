@@ -32,7 +32,7 @@ async function fixPassword() {
 
         if (user) {
             console.log('Hashing password for devendra@difmo.com...');
-            const hashedPassword = await bcrypt.hash('Welcome123!', 10);
+            const hashedPassword = await bcrypt.hash('welcome123', 10);
             user.password = hashedPassword;
             await userRepo.save(user);
             console.log(' Password hashed and saved successfully!');

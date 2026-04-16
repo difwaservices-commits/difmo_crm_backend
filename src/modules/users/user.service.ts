@@ -16,7 +16,7 @@ export class UserService {
     private roleRepository: Repository<Role>,
     @InjectRepository(Permission)
     private permissionRepository: Repository<Permission>,
-  ) {}
+  ) { }
 
   // CREATE USER
   async create(
@@ -73,7 +73,7 @@ export class UserService {
 
   // SAFE PROFILE UPDATE
   async updateProfile(userId: string, data: Partial<User>): Promise<User> {
-    console.log("aerxtcyvubinim",data);
+    console.log("aerxtcyvubinim", data);
     const user = await this.findById(userId);
     if (!user) throw new Error('User not found');
 
