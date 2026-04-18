@@ -11,7 +11,8 @@ import { Repository } from 'typeorm';
 import { Client } from './client.entity';
 import { Invoice } from '../invoices/invoice.entity';
 import * as nodemailer from 'nodemailer';
-import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { CompaniesGstService } from '../companyGstDocs/companies.Gst.service';
 // IMPORT THE SERVICE THAT HOLDS YOUR CompanyDocsGST DATA
 
@@ -138,9 +139,13 @@ export class ClientsService implements OnModuleInit {
     const sgst = total * 0.09;
     const grandTotal = total + cgst + sgst;
 
+    const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+    
     const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: isProd ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: isProd ? chromium.defaultViewport : { width: 1280, height: 720 },
+      executablePath: isProd ? await chromium.executablePath() : undefined,
+      headless: isProd ? chromium.headless : true,
     });
 
     const page = await browser.newPage();
