@@ -227,12 +227,31 @@ paths:
       responses:
         "200":
           description: ""
-  /employees/fix-roles:
+  /employees/sync-roles:
     post:
-      operationId: EmployeeController_fixRoles
+      operationId: EmployeeController_syncRoles
       parameters: []
       responses:
         "201":
+          description: ""
+  /employees/bulk-managers:
+    post:
+      operationId: EmployeeController_bulkManagers
+      parameters: []
+      responses:
+        "201":
+          description: ""
+  /employees/{id}/manager-role:
+    delete:
+      operationId: EmployeeController_revokeManager
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
           description: ""
   /employees/stats/count:
     get:
@@ -946,6 +965,27 @@ paths:
               $ref: "#/components/schemas/CompanyDocsDto"
       responses:
         "200":
+          description: ""
+  /upload/image:
+    post:
+      operationId: UploadController_uploadImage
+      parameters: []
+      responses:
+        "201":
+          description: ""
+  /upload/profileImage:
+    post:
+      operationId: UploadController_uploadAvatar
+      parameters: []
+      responses:
+        "201":
+          description: ""
+  /upload/document:
+    post:
+      operationId: UploadController_uploadDocument
+      parameters: []
+      responses:
+        "201":
           description: ""
   /dashboard/metrics:
     get:

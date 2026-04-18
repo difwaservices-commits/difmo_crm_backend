@@ -16,6 +16,8 @@ import { LeavesService } from '../leaves/leaves.service';
 import { EmployeeService } from '../employees/employee.service';
 import { Employee } from '../employees/employee.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { WFHRequestsService } from '../wfh-requests/wfh-requests.service';
+
 
 @Injectable()
 export class AttendanceService {
@@ -30,6 +32,7 @@ export class AttendanceService {
     private leavesService: LeavesService,
     private employeeService: EmployeeService,
     private notificationsService: NotificationsService,
+    private wfhRequestsService: WFHRequestsService,
   ) { }
 
   private calculateDistance(
@@ -113,9 +116,16 @@ export class AttendanceService {
     const checkInTime = ist.timeString;
 
     // 3. Geofencing Check - apply based on employeeType and workFromHome flag
+    // Skip geofence if employee has an approved WFH request for today
+    const onApprovedWFH = await this.wfhRequestsService.isEmployeeOnWFH(employeeRecord.id, today);
+    console.log('[AttendanceService] onApprovedWFH:', onApprovedWFH);
+    this['onApprovedWFH'] = onApprovedWFH; // Store for later use in status
+
     const requiresGeofenceCheck =
-      employeeRecord.employeeType === 'office' ||
-      (employeeRecord.employeeType === 'hybrid' && !employeeRecord.workFromHome);
+      !onApprovedWFH && (
+        employeeRecord.employeeType === 'office' ||
+        (employeeRecord.employeeType === 'hybrid' && !employeeRecord.workFromHome)
+      );
 
     if (requiresGeofenceCheck && checkInDto.latitude && checkInDto.longitude) {
       const distance = this.calculateDistance(
@@ -238,8 +248,8 @@ export class AttendanceService {
       employeeId: checkInDto.employeeId,
       date: today as any,
       checkInTime,
-      status,
-      location: checkInDto.location,
+      status: this['onApprovedWFH'] ? 'wfh' : status,
+      location: this['onApprovedWFH'] ? 'WFH' : (checkInDto.location || 'Office'),
       notes: checkInDto.notes,
     });
 

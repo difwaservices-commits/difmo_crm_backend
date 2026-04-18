@@ -30,6 +30,24 @@ export class EmployeeController {
   }
 
 
+  @Post('sync-roles')
+  @CheckAbilities({ action: Action.Update, subject: 'employee' })
+  async syncRoles(@Body('companyId') companyId: string) {
+    return this.employeeService.fixEmployeeRoles(companyId);
+  }
+
+  @Post('bulk-managers')
+  @CheckAbilities({ action: Action.Update, subject: 'employee' })
+  async bulkManagers(@Body('employeeIds') ids: string[]) {
+    return this.employeeService.bulkAssignManagers(ids);
+  }
+
+  @Delete(':id/manager-role')
+  @CheckAbilities({ action: Action.Update, subject: 'employee' })
+  async revokeManager(@Param('id') id: string) {
+    return this.employeeService.revokeManagerRole(id);
+  }
+
   @Get('stats/count')
   @CheckAbilities({ action: Action.Read, subject: 'employee' })
   async getCount(@Query('companyId') companyId?: string) {

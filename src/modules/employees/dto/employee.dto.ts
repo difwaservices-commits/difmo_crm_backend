@@ -87,7 +87,22 @@ export class CreateEmployeeDto {
   @IsArray()
   @IsOptional()
   skills?: string[];
+
+
+
+  @IsString()
+  @IsOptional()
+  profileImage?: string;
+
+  @IsString()
+  @IsOptional()
+  avatar?: string;
+
+  @IsArray()
+  @IsOptional()
+  documents?: any[];
 }
+
 
 export class UpdateEmployeeDto {
   @IsString()
@@ -137,7 +152,7 @@ export class UpdateEmployeeDto {
   @IsString()
   @IsOptional()
   emergencyContact?: string;
-  
+
 
   @IsString()
   @IsOptional()
@@ -146,4 +161,18 @@ export class UpdateEmployeeDto {
   @IsArray()
   @IsOptional()
   skills?: string[];
+
+
+
+  @IsString()
+  @IsOptional()
+  profileImage?: string;
+
+  @IsString()
+  @IsOptional()
+  avatar?: string;
+
+  @IsArray()
+  @IsOptional()
+  documents?: any[];
 }

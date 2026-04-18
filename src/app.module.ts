@@ -21,6 +21,9 @@ import { LeavesModule } from './modules/leaves/leaves.module';
 import { Leave } from './modules/leaves/leave.entity';
 import { DesignationModule } from './modules/designations/designation.module';
 import { Designation } from './modules/designations/designation.entity';
+import { WFHRequest } from './modules/wfh-requests/wfh-request.entity';
+import { WFHRequestsModule } from './modules/wfh-requests/wfh-requests.module';
+
 
 import { Project } from './modules/projects/entities/project.entity';
 import { Task } from './modules/projects/entities/task.entity';
@@ -41,7 +44,8 @@ import { AllProject } from './modules/project/project.entity';
 import { AllProjectModule } from './modules/project/project.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { Client } from './modules/clients/client.entity';
-// import { UploadModule } from './modules/upload/upload.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { Invoice } from './modules/invoices/invoice.entity';
 import { CompaniesModule } from './modules/companyGstDocs/copmanies.Gst.modules';
 import { CompanyGst } from './modules/companyGstDocs/company.Gst.entity';
@@ -103,6 +107,7 @@ import { JobMessage } from './modules/jobs/entities/message.entity';
           Job,
           Application,
           JobMessage,
+          WFHRequest,
         ];
         if (dbUrl) {
           return {
@@ -147,10 +152,12 @@ import { JobMessage } from './modules/jobs/entities/message.entity';
     AllProjectModule,
     NotificationsModule,
     ClientsModule,
-    // UploadModule,
+    UploadModule,
+    CloudinaryModule,
     CompaniesModule,
     DashboardModule,
     JobsModule,
+    WFHRequestsModule,
   ],
 
   controllers: [AppController],

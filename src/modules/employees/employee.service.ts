@@ -42,6 +42,7 @@ export class EmployeeService {
           lastName: createEmployeeDto.lastName,
           phone: createEmployeeDto.phone,
           companyId: createEmployeeDto.companyId,
+          avatar: createEmployeeDto.avatar,
           isActive: true,
         });
         userId = newUser.id;
@@ -59,7 +60,13 @@ export class EmployeeService {
       const user = await this.userService.findById(userId);
       if (user) {
         if (roleIds) {
-          user.roles = await this.userService.findRolesByIds(roleIds);
+          // ENSURE "Employee" role is always assigned (Real-World RBAC Logic)
+          const employeeRole = await this.userService.findRoleByName('Employee');
+          const finalRoleIds = [...roleIds];
+          if (employeeRole && !finalRoleIds.includes(employeeRole.id)) {
+            finalRoleIds.push(employeeRole.id);
+          }
+          user.roles = await this.userService.findRolesByIds(finalRoleIds);
         }
         if (permissionIds) {
           user.permissions = await this.userService.findPermissionsByIds(permissionIds);
@@ -229,12 +236,12 @@ export class EmployeeService {
       results.length,
       'employees',
     );
-    
+
     if (results.length === 0 && filters?.userId) {
-       console.log(`[EmployeeService] DIAGNOSTIC - ALERT: No employee found for userId: ${filters.userId}`);
-       // Check if record exists regardless of filters
-       const rawCheck = await this.employeeRepository.findOne({ where: { userId: filters.userId } });
-       console.log('[EmployeeService] DIAGNOSTIC - Raw record check (ignoring filters):', rawCheck ? 'FOUND' : 'NOT FOUND');
+      console.log(`[EmployeeService] DIAGNOSTIC - ALERT: No employee found for userId: ${filters.userId}`);
+      // Check if record exists regardless of filters
+      const rawCheck = await this.employeeRepository.findOne({ where: { userId: filters.userId } });
+      console.log('[EmployeeService] DIAGNOSTIC - Raw record check (ignoring filters):', rawCheck ? 'FOUND' : 'NOT FOUND');
     }
 
     return results;
@@ -305,6 +312,9 @@ export class EmployeeService {
         'emergencyContact',
         'emergencyPhone',
         'skills',
+        'profileImage',
+        'avatar',
+        'documents',
       ];
 
       validFields.forEach((field) => {
@@ -313,7 +323,6 @@ export class EmployeeService {
         }
       });
 
-      // Update User details if provided
       if (
         firstName ||
         lastName ||
@@ -321,7 +330,9 @@ export class EmployeeService {
         phone ||
         password ||
         roleIds ||
-        permissionIds
+        permissionIds ||
+        updateEmployeeDto.profileImage ||
+        updateEmployeeDto.avatar
       ) {
         if (employee.userId) {
           const userUpdate: any = {};
@@ -330,6 +341,9 @@ export class EmployeeService {
           if (email) userUpdate.email = email;
           if (phone) userUpdate.phone = phone;
           if (password) userUpdate.password = password;
+          if (updateEmployeeDto.profileImage || updateEmployeeDto.avatar) {
+            userUpdate.avatar = updateEmployeeDto.avatar || updateEmployeeDto.profileImage;
+          }
 
           const user = await this.userService.update(
             employee.userId,
@@ -337,7 +351,13 @@ export class EmployeeService {
           );
 
           if (roleIds) {
-            user.roles = await this.userService.findRolesByIds(roleIds);
+            // ENSURE "Employee" role is always assigned (Real-World RBAC Logic)
+            const employeeRole = await this.userService.findRoleByName('Employee');
+            const finalRoleIds = [...roleIds];
+            if (employeeRole && !finalRoleIds.includes(employeeRole.id)) {
+              finalRoleIds.push(employeeRole.id);
+            }
+            user.roles = await this.userService.findRolesByIds(finalRoleIds);
           }
           if (permissionIds) {
             user.permissions = await this.userService.findPermissionsByIds(
@@ -434,20 +454,7 @@ export class EmployeeService {
     for (const employee of employees) {
       if (employee.userId) {
         try {
-          // Check if user already has Admin/Super Admin role
-          const user = await this.userService.findById(employee.userId);
-          const isAdmin = user?.roles?.some((r) =>
-            ['Super Admin', 'Admin'].includes(r.name),
-          );
-
-          if (isAdmin) {
-            console.log(
-              `[EmployeeService] Skipping user ${user?.email} as they are Admin/Super Admin`,
-            );
-            skipped++;
-            continue;
-          }
-
+          // EVERYONE should have the "Employee" role in a Real-World company
           await this.userService.assignRole(employee.userId, 'Employee');
           count++;
         } catch (e) {
@@ -461,5 +468,69 @@ export class EmployeeService {
     return {
       message: `Fixed roles for ${count} employees. Skipped ${skipped} admins.`,
     };
+  }
+  async bulkAssignManagers(employeeIds: string[]): Promise<any> {
+    const results = { success: 0, failed: 0 };
+    const managerRole = await this.userService.findRoleByName('Manager');
+    if (!managerRole) throw new Error('Manager role not found in system');
+
+    for (const id of employeeIds) {
+      try {
+        const employee = await this.findOne(id);
+        if (employee && employee.userId) {
+          // 1. Assign "Manager" role (Service already handles adding "Employee" via my recent fix)
+          const user = await this.userService.findById(employee.userId);
+          if (user) {
+            const currentRoleIds = user.roles?.map(r => r.id) || [];
+            if (!currentRoleIds.includes(managerRole.id)) {
+              // Combine roles and update User entity
+              const finalRoleIds = [...new Set([...currentRoleIds, managerRole.id])];
+
+              // Use standard update method to handle both Employee string and User relation
+              await this.update(id, {
+                roleIds: finalRoleIds,
+                role: 'Manager'
+              });
+
+              console.log(`[EmployeeService] Promoted employee ${id} to Manager role (User synced)`);
+              results.success++;
+            } else {
+              // Even if role exists in User roles, sync the Employee string field just in case
+              await this.update(id, { role: 'Manager' });
+              results.success++;
+            }
+
+          }
+        } else {
+          console.warn(`[EmployeeService] Skipped employee ${id}: No valid userId found`);
+          results.failed++;
+        }
+      } catch (e) {
+        console.error(`[EmployeeService] Failed to assign manager role to ${id}:`, e);
+        results.failed++;
+      }
+    }
+
+    console.log(`[EmployeeService] Bulk Assign Results -> Success: ${results.success}, Failed: ${results.failed}`);
+    return results;
+  }
+
+  async revokeManagerRole(employeeId: string): Promise<any> {
+    const employee = await this.findOne(employeeId);
+    if (!employee || !employee.userId) throw new Error('Employee not found');
+
+    const user = await this.userService.findById(employee.userId);
+    if (!user) throw new Error('User not found');
+
+    const managerRole = await this.userService.findRoleByName('Manager');
+    if (!managerRole) throw new Error('Manager role not found');
+
+    // 1. Remove manager role from User entity
+    user.roles = user.roles.filter(r => r.id !== managerRole.id);
+    await this.userService.saveUser(user);
+
+    // 2. Sync Employee string field back to "Employee"
+    employee.role = 'Employee';
+    return this.employeeRepository.save(employee);
   }
 }

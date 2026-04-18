@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -115,5 +116,17 @@ export class FinanceController {
     @Query('currency') currency?: string,
   ) {
     return this.financeService.getFinancialSummary(companyId, month, year, currency);
+  }
+
+  @Patch('payroll/:id')
+  @CheckAbilities({ action: Action.Update, subject: 'payroll' })
+  updatePayroll(@Param('id') id: string, @Body() data: any) {
+    return this.financeService.updatePayroll(id, data);
+  }
+
+  @Delete('payroll/:id')
+  @CheckAbilities({ action: Action.Delete, subject: 'payroll' })
+  deletePayroll(@Param('id') id: string) {
+    return this.financeService.deletePayroll(id);
   }
 }

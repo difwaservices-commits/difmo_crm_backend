@@ -25,7 +25,7 @@ async function main() {
     // If password does not start with $2b$ it's not hashed
     if (!user.password.startsWith('$2b$')) {
       console.log(`Fixing password for: ${user.email} (was plain text: ${user.password.substring(0, 10)}...)`);
-      const hashed = await bcrypt.hash('Password123!', 10);
+      const hashed = await bcrypt.hash('password123', 10);
       await userRepo.update(user.id, { password: hashed });
       console.log(`  ✅ Fixed: ${user.email}`);
     } else {

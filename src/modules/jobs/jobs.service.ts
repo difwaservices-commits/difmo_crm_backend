@@ -19,8 +19,24 @@ export class JobsService {
     return this.jobsRepo.save(job);
   }
 
-  listJobs() {
-    return this.jobsRepo.find({ order: { createdAt: 'DESC' } });
+  async listJobs(filter?: any) {
+    const page = parseInt(filter?.page) || 1;
+    const limit = parseInt(filter?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [jobs, total] = await this.jobsRepo.findAndCount({
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    return {
+      jobs,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+    };
   }
 
   async getJob(id: string) {

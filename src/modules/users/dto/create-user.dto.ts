@@ -34,4 +34,8 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   companyId?: string;
+
+  @IsString()
+  @IsOptional()
+  avatar?: string;
 }

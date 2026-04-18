@@ -55,6 +55,7 @@ export class User {
   @JoinTable()
   permissions: Permission[];
 
+
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
@@ -63,9 +64,10 @@ export class User {
     }
   }
 
-  @CreateDateColumn()
+
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

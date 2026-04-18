@@ -37,10 +37,10 @@ export class Employee {
 
   @Column({ nullable: true })
   companyId: string;
-  
+
   @ManyToOne(() => Employee)
-@JoinColumn()
-employee: Employee;
+  @JoinColumn()
+  employee: Employee;
 
   @ManyToOne(() => Department, { nullable: true })
   @JoinColumn()
@@ -104,15 +104,20 @@ employee: Employee;
   @Column({ default: false })
   isDeleted: boolean
 
-   @Column({ nullable: true })
-  avatar: string; 
+  @Column({ name: 'avatar', nullable: true })
+  avatar: string;
+
+
+
+  @Column({ type: 'simple-json', nullable: true })
+  documents: any[];
 
   @Column({ nullable: true })
   checkInTime: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

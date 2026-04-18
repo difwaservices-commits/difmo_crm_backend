@@ -13,8 +13,8 @@ export class JobsController {
   }
 
   @Get()
-  listJobs() {
-    return this.jobsService.listJobs();
+  listJobs(@Query() q: any) {
+    return this.jobsService.listJobs(q);
   }
 
   @Get(':id')

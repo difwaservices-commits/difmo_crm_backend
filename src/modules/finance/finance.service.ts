@@ -604,4 +604,27 @@ export class FinanceService {
       currency: targetCurrency.toUpperCase()
     };
   }
+
+  async updatePayroll(id: string, data: Partial<Payroll>): Promise<Payroll> {
+    const payroll = await this.payrollRepository.findOne({ where: { id } });
+    if (!payroll) throw new NotFoundException('Payroll not found');
+
+    // Recalculate net salary if components changed
+    if (data.basicSalary !== undefined || data.allowances !== undefined || data.deductions !== undefined) {
+      const basic = Number(data.basicSalary !== undefined ? data.basicSalary : payroll.basicSalary);
+      const allowances = Number(data.allowances !== undefined ? data.allowances : (payroll.allowances || 0));
+      const deductions = Number(data.deductions !== undefined ? data.deductions : (payroll.deductions || 0));
+      data.netSalary = basic + allowances - deductions;
+    }
+
+    Object.assign(payroll, data);
+    return this.payrollRepository.save(payroll);
+  }
+
+  async deletePayroll(id: string): Promise<{ message: string }> {
+    const payroll = await this.payrollRepository.findOne({ where: { id } });
+    if (!payroll) throw new NotFoundException('Payroll not found');
+    await this.payrollRepository.remove(payroll);
+    return { message: 'Payroll deleted successfully' };
+  }
 }

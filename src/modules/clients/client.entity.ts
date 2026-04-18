@@ -65,6 +65,12 @@ export class Client {
   invoiceMessage: string;
 
   @Column({ nullable: true })
+  logo: string;
+
+  @Column({ type: 'simple-array', nullable: true })
+  documents: string[];
+
+  @Column({ nullable: true })
   companyId: string;
 
   @CreateDateColumn()

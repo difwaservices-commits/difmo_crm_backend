@@ -10,6 +10,8 @@ import { EmployeeModule } from '../employees/employee.module';
 
 import { AccessControlModule } from '../access-control/access-control.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { WFHRequestsModule } from '../wfh-requests/wfh-requests.module';
+
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     EmployeeModule,
     AccessControlModule,
     NotificationsModule,
+    WFHRequestsModule,
   ],
   controllers: [AttendanceController],
   providers: [AttendanceService],

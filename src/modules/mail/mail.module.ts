@@ -25,7 +25,7 @@ import { join } from 'path';
           from: '"No Reply" <noreply@example.com>',
         },
         template: {
-          dir: join(__dirname, 'templates'),
+          dir: join(process.cwd(), 'src', 'modules', 'mail', 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
@@ -37,7 +37,7 @@ import { join } from 'path';
   ],
   exports: [MailerModule],
 })
-export class MailModule {}
+export class MailModule { }
 
 // NOTE: If emails are not being delivered, ensure the following env vars are set for the backend:
 // MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS

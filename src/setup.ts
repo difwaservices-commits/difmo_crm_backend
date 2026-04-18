@@ -16,16 +16,25 @@ export function setupApp(app: INestApplication) {
         callback(null, true);
         return;
       }
+
+      // In production mode, we still want to allow localhost for local testing/debugging
       const allowedOrigins = [
         'vercel.app',
         'localhost:5173',
-        'localhost:3000'
+        'localhost:5174',
+        'localhost:5175',
+        'localhost:3000',
+        '127.0.0.1:5173',
+        '127.0.0.1:5174',
+        '127.0.0.1:5175'
       ];
-      const isAllowed = allowedOrigins.some(domain => origin.includes(domain));
+      
+      const isAllowed = !origin || allowedOrigins.some(domain => origin.includes(domain));
       
       if (isAllowed) {
         callback(null, true);
       } else {
+        console.warn(`CORS blocked for origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },

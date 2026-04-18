@@ -102,6 +102,11 @@ export class UserService {
     return this.permissionRepository.find({ where: { id: In(ids) } });
   }
 
+  // FIND ROLE BY NAME
+  async findRoleByName(name: string): Promise<Role | null> {
+    return this.roleRepository.findOne({ where: { name } });
+  }
+
   // ASSIGN ROLE TO USER
   async assignRole(userId: string, roleName: string): Promise<User> {
     const user = await this.userRepository.findOne({

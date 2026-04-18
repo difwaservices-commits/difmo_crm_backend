@@ -256,6 +256,15 @@ export class NotificationsService implements OnModuleInit {
                 if (admin.email) emails.push(admin.email);
                 userIds.push(admin.id);
             }
+        } else if (dto.recipientFilter === 'employees' && !dto.recipientIds?.length) {
+            const employees = await this.employeeRepo.find({
+                where: { companyId: dto.companyId, status: 'active' },
+                relations: ['user'],
+            });
+            for (const emp of employees) {
+                if (emp.user?.email) emails.push(emp.user.email);
+                if (emp.userId) userIds.push(emp.userId);
+            }
         } else if (dto.recipientIds?.length) {
             this.logger.debug(`Resolving recipients by explicit IDs: ${dto.recipientIds.join(', ')}`);
             userIds.push(...dto.recipientIds);
@@ -263,8 +272,8 @@ export class NotificationsService implements OnModuleInit {
             emails.push(...users.map(u => u.email).filter(Boolean));
         }
 
-        const uniqueEmails = [...new Set(emails)];
-        const uniqueUserIds = [...new Set(userIds)];
+        const uniqueEmails = [...new Set(emails)].filter(Boolean);
+        const uniqueUserIds = [...new Set(userIds)].filter(id => id && id.trim() !== '');
         this.logger.log(`Resolved recipients: ${uniqueUserIds.length} users, ${uniqueEmails.length} emails`);
         return { emails: uniqueEmails, userIds: uniqueUserIds };
     }

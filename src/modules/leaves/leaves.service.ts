@@ -141,14 +141,14 @@ export class LeavesService {
 
     const updatedLeave = await this.leavesRepository.save(leave);
     
-    //  Real-time Notification to Employee
+    // 1. Notification to Employee
     try {
       await this.notificationsService.send({
         title: `Leave ${updatedLeave.status}`,
         message: `Your leave application has been ${updatedLeave.status.toLowerCase()}.${updatedLeave.adminComment ? ` Admin Note: ${updatedLeave.adminComment}` : ''}`,
         type: 'both',
         recipientFilter: 'employees',
-        recipientIds: [updatedLeave.employee?.userId || ''],
+        recipientIds: [updatedLeave.employee?.userId].filter(Boolean) as string[],
         companyId: updatedLeave.employee?.companyId || '',
         metadata: {
           type: 'LEAVE_STATUS',
@@ -159,6 +159,26 @@ export class LeavesService {
       });
     } catch (err) {
       console.error('[LeavesService] Failed to send employee notification:', err.message);
+    }
+
+    // 2. Notification to Admin (Both Side)
+    try {
+      await this.notificationsService.send({
+        title: `Leave Request ${updatedLeave.status.charAt(0) + updatedLeave.status.slice(1).toLowerCase()}`,
+        message: `Leave request for ${updatedLeave.employee?.user?.firstName || 'Employee'} has been ${updatedLeave.status.toLowerCase()}.`,
+        type: 'both',
+        recipientFilter: 'admin',
+        companyId: updatedLeave.employee?.companyId || '',
+        metadata: {
+          type: 'LEAVE_STATUS_UPDATED',
+          leaveId: updatedLeave.id,
+          status: updatedLeave.status,
+          employeeName: updatedLeave.employee?.user?.firstName || 'Employee',
+          comment: updatedLeave.adminComment
+        }
+      });
+    } catch (err) {
+      console.error('[LeavesService] Failed to send admin notification:', err.message);
     }
 
     // Also send direct email using nodemailer for important status updates
