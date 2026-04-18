@@ -92,10 +92,6 @@ export class CreateEmployeeDto {
 
   @IsString()
   @IsOptional()
-  profileImage?: string;
-
-  @IsString()
-  @IsOptional()
   avatar?: string;
 
   @IsArray()
@@ -163,10 +159,6 @@ export class UpdateEmployeeDto {
   skills?: string[];
 
 
-
-  @IsString()
-  @IsOptional()
-  profileImage?: string;
 
   @IsString()
   @IsOptional()

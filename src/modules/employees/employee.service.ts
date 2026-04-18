@@ -312,7 +312,6 @@ export class EmployeeService {
         'emergencyContact',
         'emergencyPhone',
         'skills',
-        'profileImage',
         'avatar',
         'documents',
       ];
@@ -329,9 +328,6 @@ export class EmployeeService {
         email ||
         phone ||
         password ||
-        roleIds ||
-        permissionIds ||
-        updateEmployeeDto.profileImage ||
         updateEmployeeDto.avatar
       ) {
         if (employee.userId) {
@@ -341,8 +337,8 @@ export class EmployeeService {
           if (email) userUpdate.email = email;
           if (phone) userUpdate.phone = phone;
           if (password) userUpdate.password = password;
-          if (updateEmployeeDto.profileImage || updateEmployeeDto.avatar) {
-            userUpdate.avatar = updateEmployeeDto.avatar || updateEmployeeDto.profileImage;
+          if (updateEmployeeDto.avatar) {
+            userUpdate.avatar = updateEmployeeDto.avatar;
           }
 
           const user = await this.userService.update(
