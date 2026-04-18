@@ -14,17 +14,18 @@ async function bootstrap() {
 
 export default async (req, res) => {
   // Set CORS headers for all requests
-  const origin = req.headers.origin;
   const allowedOrigins = [
     'https://difmo-crm-frontend.vercel.app',
+    'https://difmo-crm-backend.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000'
   ];
 
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  const isAllowed = !origin || allowedOrigins.includes(origin) || (origin.endsWith('.vercel.app'));
+
+  if (isAllowed) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
   } else {
-    // Fallback to the main production origin if not matched or no origin header
     res.setHeader('Access-Control-Allow-Origin', 'https://difmo-crm-frontend.vercel.app');
   }
 
