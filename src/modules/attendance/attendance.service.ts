@@ -22,9 +22,9 @@ import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AttendanceService {
-  // Office coordinates: 26.8604896, 81.0200511
-  private readonly OFFICE_LAT = 26.861150;
-  private readonly OFFICE_LNG = 81.017587;
+  // Office coordinates: 26.8604635, 81.0199275
+  private readonly OFFICE_LAT = 26.8604635;
+  private readonly OFFICE_LNG = 81.0199275;
   private readonly MAX_DISTANCE_METERS = 350;
 
   constructor(
@@ -114,35 +114,36 @@ export class AttendanceService {
       // Update DTO with the TRUE PK for database integrity
       checkInDto.employeeId = employeeRecord.id;
 
-    const ist = this.getISTTimeParts();
-    const checkInTime = ist.timeString;
+      const ist = this.getISTTimeParts();
+      const checkInTime = ist.timeString;
 
-    // 3. Geofencing Check - apply based on employeeType and workFromHome flag
-    // Skip geofence if employee has an approved WFH request for today
-    const onApprovedWFH = await this.wfhRequestsService.isEmployeeOnWFH(employeeRecord.id, today);
-    console.log('[AttendanceService] onApprovedWFH:', onApprovedWFH);
-    this['onApprovedWFH'] = onApprovedWFH; // Store for later use in status
+      // 3. Geofencing Check - apply based on employeeType and workFromHome flag
+      // Skip geofence if employee has an approved WFH request for today
+      const onApprovedWFH = await this.wfhRequestsService.isEmployeeOnWFH(employeeRecord.id, today);
+      console.log('[AttendanceService] onApprovedWFH:', onApprovedWFH);
+      this['onApprovedWFH'] = onApprovedWFH; // Store for later use in status
 
-    const requiresGeofenceCheck =
-      !onApprovedWFH && (
-        employeeRecord.employeeType === 'office' ||
-        (employeeRecord.employeeType === 'hybrid' && !employeeRecord.workFromHome)
-      );
-
-    if (requiresGeofenceCheck && checkInDto.latitude && checkInDto.longitude) {
-      const distance = this.calculateDistance(
-        checkInDto.latitude,
-        checkInDto.longitude,
-        this.OFFICE_LAT,
-        this.OFFICE_LNG,
-      );
-      console.log('[AttendanceService] Distance:', distance, 'MAX:', this.MAX_DISTANCE_METERS);
-      if (distance > this.MAX_DISTANCE_METERS) {
-        throw new ForbiddenException(
-          `You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`,
+      const requiresGeofenceCheck =
+        !onApprovedWFH && (
+          employeeRecord.employeeType === 'office' ||
+          (employeeRecord.employeeType === 'hybrid' && !employeeRecord.workFromHome)
         );
+
+      if (requiresGeofenceCheck && checkInDto.latitude && checkInDto.longitude) {
+
+        const distance = this.calculateDistance(
+          checkInDto.latitude,
+          checkInDto.longitude,
+          this.OFFICE_LAT,
+          this.OFFICE_LNG,
+        );
+        console.log('[AttendanceService] Distance:', distance, 'MAX:', this.MAX_DISTANCE_METERS);
+        if (distance > this.MAX_DISTANCE_METERS) {
+          throw new ForbiddenException(
+            `You are ${Math.round(distance)}m away. You must be within ${this.MAX_DISTANCE_METERS}m of the office to check in.`,
+          );
+        }
       }
-    }
 
       if (employeeRecord.company && employeeRecord.company.openingTime) {
         console.log('[AttendanceService] Opening Time:', employeeRecord.company.openingTime);
@@ -195,7 +196,7 @@ export class AttendanceService {
 
       const specialEmployees = ['anuskapadit', 'khushhi', 'rahul', 'shadhna', 'simran'];
       const employeeIdentifier = `${employee.user?.firstName || ''} ${employee.user?.lastName || ''} ${employee.user?.email || ''}`.toLowerCase();
-      
+
       // Resolve Target Time
       let targetTime = employee.checkInTime; // Using the new column
       if (!targetTime) {
@@ -259,7 +260,7 @@ export class AttendanceService {
     try {
       const saved = await this.attendanceRepository.save(attendance);
       console.log('[AttendanceService] Success! ID:', saved.id);
-      
+
       // Trigger Email Notification
       const employee = await this.employeeService.findOne(saved.employeeId);
       if (employee?.user?.email) {

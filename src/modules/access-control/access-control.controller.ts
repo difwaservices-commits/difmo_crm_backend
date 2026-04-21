@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Put,
+  Delete,
   Param,
   Query,
   UseGuards,
@@ -52,5 +53,10 @@ export class AccessControlController {
   @Post('seed')
   async seed() {
     return this.accessControlService.seedDefaultPermissions();
+  }
+
+  @Delete('roles/:id')
+  async deleteRole(@Param('id') id: string) {
+    return this.accessControlService.deleteRole(id);
   }
 }

@@ -118,6 +118,11 @@ import { JobMessage } from './modules/jobs/entities/message.entity';
             ssl: {
               rejectUnauthorized: false,
             },
+            extra: {
+              max: 20,
+              idleTimeoutMillis: 30000,
+              connectionTimeoutMillis: 2000,
+            },
           };
         }
 

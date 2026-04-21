@@ -100,4 +100,15 @@ export class AccessControlService {
     }
     return { message: 'Permissions seeded successfully' };
   }
+
+  async deleteRole(id: string) {
+    const role = await this.findOneRole(id);
+    
+    // Safeguard: Do not allow deleting the primary Admin role
+    if (role.name === 'Admin' || role.name === 'Super Admin') {
+      throw new Error('Cannot delete system-protected roles');
+    }
+
+    return this.roleRepository.remove(role);
+  }
 }
