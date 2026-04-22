@@ -13,32 +13,38 @@ async function bootstrap() {
 }
 
 export default async (req, res) => {
-  // Set CORS headers for all requests
-  const allowedOrigins = [
-    'https://difmo-crm-frontend.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-    'http://localhost:3000'
-  ];
-
   const origin = req.headers.origin;
-  const isAllowed = !origin || 
-    allowedOrigins.includes(origin) || 
-    (origin.endsWith('.vercel.app')) ||
-    (origin.includes('localhost:')) ||
-    (origin.includes('127.0.0.1:'));
+  
+  // CORS configuration
+  const setCorsHeaders = (response, requestOrigin) => {
+    const allowedOrigins = [
+      'https://difmo-crm-frontend.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      'http://localhost:3000'
+    ];
 
-  if (isAllowed && origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    // Default to the main production frontend if not explicitly allowed or no origin
-    res.setHeader('Access-Control-Allow-Origin', 'https://difmo-crm-frontend.vercel.app');
-  }
+    const isAllowed = !requestOrigin || 
+      allowedOrigins.includes(requestOrigin) || 
+      requestOrigin.endsWith('.vercel.app') ||
+      requestOrigin.includes('localhost:') ||
+      requestOrigin.includes('127.0.0.1:');
 
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT,HEAD');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+    if (isAllowed && requestOrigin) {
+      response.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    } else {
+      response.setHeader('Access-Control-Allow-Origin', 'https://difmo-crm-frontend.vercel.app');
+    }
+
+    response.setHeader('Access-Control-Allow-Credentials', 'true');
+    response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT,HEAD');
+    response.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+    response.setHeader('X-CORS-Debug', 'Serverless-Handler-Applied');
+  };
+
+  // Always set headers at the start
+  setCorsHeaders(res, origin);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -52,10 +58,15 @@ export default async (req, res) => {
     return handler(req, res);
   } catch (error) {
     console.error('SERVERLESS_BOOTSTRAP_ERROR:', error);
+    
+    // Ensure headers are set even on error
+    setCorsHeaders(res, origin);
+    
     res.status(500).json({
       statusCode: 500,
       message: 'Internal Server Error during bootstrap',
-      error: error.message
+      error: error.message,
+      path: req.url
     });
   }
 };

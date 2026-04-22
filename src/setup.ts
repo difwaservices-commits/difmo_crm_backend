@@ -11,38 +11,7 @@ export function setupApp(app: INestApplication) {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableCors({
-    origin: (origin, callback) => {
-      // Allow development origins, and any incoming origin if not in production
-      if (process.env.NODE_ENV !== 'production' || !origin) {
-        callback(null, true);
-        return;
-      }
-
-      // In production mode, we still want to allow localhost for local testing/debugging
-      const allowedOrigins = [
-        'https://difmo-crm-frontend.vercel.app',
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5175',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173',
-        'http://127.0.0.1:5174',
-        'http://127.0.0.1:5175'
-      ];
-      
-      const isAllowed = !origin || 
-        allowedOrigins.includes(origin) || 
-        origin.endsWith('.vercel.app') ||
-        origin.includes('localhost:') ||
-        origin.includes('127.0.0.1:');
-      
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.warn(`CORS blocked for origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: true, // Echoes the origin from the request, security is handled by the serverless layer
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With',
