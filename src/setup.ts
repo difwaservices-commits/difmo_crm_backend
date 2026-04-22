@@ -10,12 +10,6 @@ export function setupApp(app: INestApplication) {
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.enableCors({
-    origin: true, // Echoes the origin from the request, security is handled by the serverless layer
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
-    allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With',
-  });
 
   const config = new DocumentBuilder()
     .setTitle('Difmo CRM API')
