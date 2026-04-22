@@ -16,27 +16,28 @@ export default async (req, res) => {
   // Set CORS headers for all requests
   const allowedOrigins = [
     'https://difmo-crm-frontend.vercel.app',
-    'https://difmo-crm-backend.vercel.app',
     'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
     'http://localhost:3000'
   ];
 
   const origin = req.headers.origin;
   const isAllowed = !origin || 
     allowedOrigins.includes(origin) || 
-    origin.endsWith('.vercel.app') ||
-    origin.startsWith('http://localhost') ||
-    origin.startsWith('http://127.0.0.1');
+    (origin.endsWith('.vercel.app')) ||
+    (origin.includes('localhost:')) ||
+    (origin.includes('127.0.0.1:'));
 
   if (isAllowed && origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else {
-    // Fallback for security but still providing a header
+    // Default to the main production frontend if not explicitly allowed or no origin
     res.setHeader('Access-Control-Allow-Origin', 'https://difmo-crm-frontend.vercel.app');
   }
 
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT,HEAD');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
   if (req.method === 'OPTIONS') {
