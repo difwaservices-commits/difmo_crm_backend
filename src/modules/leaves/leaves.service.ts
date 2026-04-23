@@ -213,4 +213,22 @@ export class LeavesService {
 
     return !!leave;
   }
+  async update(id: string, updateLeaveDto: any): Promise<Leave> {
+    const leave = await this.leavesRepository.preload({
+      id,
+      ...updateLeaveDto,
+    });
+    if (!leave) {
+      throw new NotFoundException(`Leave with ID ${id} not found`);
+    }
+    return this.leavesRepository.save(leave);
+  }
+
+  async delete(id: string): Promise<void> {
+    const leave = await this.findOne(id);
+    if (!leave) {
+      throw new NotFoundException('Leave record not found');
+    }
+    await this.leavesRepository.remove(leave);
+  }
 }

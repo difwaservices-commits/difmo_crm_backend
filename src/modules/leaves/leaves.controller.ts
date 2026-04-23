@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Delete,
   Param,
   Query,
   UseGuards,
@@ -38,5 +39,15 @@ export class LeavesController {
     @Body() updateLeaveStatusDto: UpdateLeaveStatusDto,
   ) {
     return this.leavesService.updateStatus(id, updateLeaveStatusDto);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateLeaveDto: any) {
+    return this.leavesService.update(id, updateLeaveDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.leavesService.delete(id);
   }
 }

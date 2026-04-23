@@ -140,4 +140,12 @@ export class WFHRequestsService {
     });
     return !!request;
   }
+
+  async delete(id: string): Promise<void> {
+    const request = await this.findOne(id);
+    if (!request) {
+      throw new NotFoundException('Work from home request not found');
+    }
+    await this.wfhRepository.remove(request);
+  }
 }

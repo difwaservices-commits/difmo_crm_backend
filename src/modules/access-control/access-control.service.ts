@@ -11,7 +11,7 @@ export class AccessControlService {
     private roleRepository: Repository<Role>,
     @InjectRepository(Permission)
     private permissionRepository: Repository<Permission>,
-  ) {}
+  ) { }
 
   async findAllRoles(companyId?: string) {
     return this.roleRepository.find({
@@ -77,10 +77,16 @@ export class AccessControlService {
       'employee',
       'attendance',
       'leave',
-      'department',
-      'company',
       'role',
       'permission',
+      'task',
+      'client',
+      'project',
+      'payroll',
+      'time-tracking',
+      'monitoring',
+      'job',
+      'expense',
     ];
     const actions = ['create', 'read', 'update', 'delete', 'manage'];
 
@@ -103,7 +109,7 @@ export class AccessControlService {
 
   async deleteRole(id: string) {
     const role = await this.findOneRole(id);
-    
+
     // Safeguard: Do not allow deleting the primary Admin role
     if (role.name === 'Admin' || role.name === 'Super Admin') {
       throw new Error('Cannot delete system-protected roles');
