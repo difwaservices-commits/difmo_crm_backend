@@ -79,10 +79,13 @@ import { JobMessage } from './modules/jobs/entities/message.entity';
            dbUrl = configService.get<string>('DATABASE_URL');
         }
 
-        console.log(
-          `[Environment: ${env}] DATABASE_URL:`,
-          dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not Set',
-        );
+        console.log(`[DB_DIAGNOSTIC] Environment: ${env}`);
+        console.log(`[DB_DIAGNOSTIC] DATABASE_URL_PROD defined: ${!!configService.get('DATABASE_URL_PROD')}`);
+        console.log(`[DB_DIAGNOSTIC] DATABASE_URL defined: ${!!configService.get('DATABASE_URL')}`);
+        
+        const finalUrl = dbUrl || 'NONE';
+        console.log(`[DB_DIAGNOSTIC] Final Connection URL: ${finalUrl.startsWith('postgres') ? finalUrl.split('@')[1] : finalUrl}`);
+
         const entities = [
           Company,
           User,
@@ -122,8 +125,10 @@ import { JobMessage } from './modules/jobs/entities/message.entity';
             extra: {
               max: 20,
               idleTimeoutMillis: 30000,
-              connectionTimeoutMillis: 2000,
+              connectionTimeoutMillis: 10000,
             },
+            retryAttempts: 10,
+            retryDelay: 3000,
           };
         }
 
