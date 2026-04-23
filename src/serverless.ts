@@ -49,7 +49,8 @@ export default async (req, res) => {
     res.status(500).json({
       statusCode: 500,
       message: 'Internal Server Error during bootstrap',
-      error: error.message
+      error: error.message,
+      stack: error.stack // Added for debugging
     });
   }
 };

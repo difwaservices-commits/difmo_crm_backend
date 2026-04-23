@@ -35,8 +35,14 @@ export class AuthController {
       console.log(`[AuthFlow] Login SUCCESS for: ${req.email} (Time: ${Date.now() - startTime}ms)`);
       return response;
     } catch (error) {
-      console.error(`[AuthFlow] Login ERROR for: ${req.email}: ${error.message} (Time: ${Date.now() - startTime}ms)`);
-      throw error;
+      console.error(`[AuthFlow] Login ERROR for: ${req.email}: ${error.message}`);
+      // Return a structured error response that axios can read
+      return {
+        statusCode: 500,
+        message: 'Login failed due to server error',
+        error: error.message,
+        stack: error.stack
+      };
     }
   }
 
