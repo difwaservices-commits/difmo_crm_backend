@@ -70,13 +70,14 @@ import { JobMessage } from './modules/jobs/entities/message.entity';
 
         let dbUrl: string | undefined;
         if (env === 'production') {
-          dbUrl = configService.get<string>('DATABASE_URL_PROD') || configService.get<string>('DATABASE_URL');
+          dbUrl = configService.get<string>('DATABASE_URL_PROD') || configService.get<string>('DATABASE_URL') || configService.get<string>('DATABASE_URL_STAGING');
         } else if (env === 'development') {
-          dbUrl = configService.get<string>('DATABASE_URL_STAGING') || configService.get<string>('DATABASE_URL');
+          dbUrl = configService.get<string>('DATABASE_URL_STAGING') || configService.get<string>('DATABASE_URL') || configService.get<string>('DATABASE_URL_PROD');
         }
-        // if (!dbUrl) {
-        //   dbUrl = configService.get<string>('DATABASE_URL');
-        // }
+        
+        if (!dbUrl) {
+           dbUrl = configService.get<string>('DATABASE_URL');
+        }
 
         console.log(
           `[Environment: ${env}] DATABASE_URL:`,
