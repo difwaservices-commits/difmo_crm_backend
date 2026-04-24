@@ -55,7 +55,7 @@ export class ProjectsService {
 
         if (recipientIds.length > 0) {
           await this.notificationsService.send({
-            title: 'New Project Assignment',
+            title: 'Difmo Pvt Ltd: New Project Assignment',
             message: `You have been assigned to a new project: ${project.projectName}.`,
             type: 'both',
             recipientFilter: 'custom',
@@ -121,7 +121,7 @@ export class ProjectsService {
 
         if (assignee?.userId) {
           await this.notificationsService.send({
-            title: 'New Task Assigned',
+            title: 'Difmo Pvt Ltd: New Task Assigned',
             message: `You have been assigned a new task: ${savedTask.title}. Priority: ${savedTask.priority}.`,
             type: 'both',
             recipientFilter: 'employees',

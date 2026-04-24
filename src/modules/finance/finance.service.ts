@@ -77,6 +77,7 @@ export class FinanceService {
       });
       if (emp && emp.userId) {
         const netSal = this.parseSalary(payroll.netSalary);
+        console.log(`[FinanceService] Notifying employee ${emp.id} of payroll creation. Net Salary: ${netSal}`);
         await this.notificationsService.send({
           title: 'Difmo Pvt Ltd: Payroll Slip Generated',
           message: `Your payroll for ${payroll.month}/${payroll.year} has been generated. Net Salary: ₹${netSal.toFixed(2)}.`,
@@ -288,6 +289,7 @@ export class FinanceService {
 
       // 🔥 Real-time Notification to Employee
       try {
+        console.log(`[FinanceService] Notifying employee ${emp.id} of payroll generation. Net Salary: ${netSalary}`);
         await this.notificationsService.send({
           title: 'Difmo Pvt Ltd: Payroll Generated',
           message: `Your payroll for ${month}/${year} has been generated. Net Salary: ₹${netSalary.toFixed(2)}.`,
@@ -433,12 +435,15 @@ export class FinanceService {
     if (!attendance.employee) throw new Error('Employee not found for this attendance');
 
     const companyId = attendance.employee.companyId;
+    const basicSalary = this.parseSalary(attendance.employee.salary) || 20000;
+
+    console.log(`[FinanceService] Generating single payroll for employee ${attendance.employeeId}. Basic Salary: ${basicSalary}`);
 
     return this.payrollRepository.save({
       employeeId: attendance.employeeId,
       companyId: companyId,
-      basicSalary: 30000,
-      netSalary: 30000,
+      basicSalary: basicSalary,
+      netSalary: basicSalary, // Simplified for single generation
       month: new Date().getMonth() + 1,
       year: new Date().getFullYear(),
       status: 'unpaid'
@@ -515,6 +520,7 @@ export class FinanceService {
       });
       if (emp && emp.userId) {
         const netSal = this.parseSalary(payroll.netSalary);
+        console.log(`[FinanceService] Notifying employee ${emp.id} of payroll payment. Amount: ${netSal}`);
         await this.notificationsService.send({
           title: 'Difmo Pvt Ltd: Salary Disbursed',
           message: `Your salary for ${payroll.month}/${payroll.year} has been marked as PAID. Amount: ₹${netSal.toFixed(2)}.`,

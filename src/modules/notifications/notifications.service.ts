@@ -215,7 +215,7 @@ export class NotificationsService implements OnModuleInit {
             <div style="${baseStyle}">
                 <div style="${headerStyle}">
                     <img src="${logoUrl}" alt="Difmo Pvt Ltd" style="height: 40px; margin-bottom: 10px;">
-                    <h1 style="margin: 0; font-size: 20px;">Difmo Private Limited</h1>
+                    <h1 style="margin: 0; font-size: 20px;">Difmo Pvt Ltd</h1>
                 </div>
                 <div style="${bodyStyle}">
                     ${content}
@@ -225,7 +225,7 @@ export class NotificationsService implements OnModuleInit {
                     </div>
                 </div>
                 <div style="${footerStyle}">
-                    <p>&copy; ${new Date().getFullYear()} Difmo Private Limited. All rights reserved.</p>
+                    <p>&copy; ${new Date().getFullYear()} Difmo Pvt Ltd. All rights reserved.</p>
                     <p>You received this email from Difmo Pvt Ltd CRM.</p>
                 </div>
             </div>
@@ -303,6 +303,7 @@ export class NotificationsService implements OnModuleInit {
             try {
                 const htmlContent = this.getEmailTemplate(metadata.type, title, message, metadata);
                 const finalSubject = title.includes('Difmo') ? title : `Difmo Pvt Ltd - ${title}`;
+                this.logger.log(`[Email] Sending template '${metadata.type}' to ${email} with subject: ${finalSubject}`);
                 await this.mailerService.sendMail({
                     to: email,
                     subject: finalSubject,
@@ -310,7 +311,7 @@ export class NotificationsService implements OnModuleInit {
                 });
                 success++;
             } catch (err) {
-                this.logger.error(`Failed to send email to ${email}: ${err?.message || err}`);
+                this.logger.error(`[Email] Failed to send to ${email}: ${err?.message || err}`);
                 this.logger.debug(err);
                 failure++;
             }

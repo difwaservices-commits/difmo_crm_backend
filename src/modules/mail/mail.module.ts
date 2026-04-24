@@ -23,7 +23,7 @@ import { MailService } from './mail.service';
           },
         },
         defaults: {
-          from: '"No Reply" <noreply@example.com>',
+          from: '"Difmo Pvt Ltd" <noreply@difmo.com>',
         },
         template: {
           dir: join(process.cwd(), 'src', 'modules', 'mail', 'templates'),
