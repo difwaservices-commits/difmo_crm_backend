@@ -115,6 +115,12 @@ export class Employee {
   @Column({ nullable: true })
   checkInTime: string;
 
+  @Column({ nullable: true })
+  startTime: string;
+
+  @Column({ nullable: true })
+  endTime: string;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

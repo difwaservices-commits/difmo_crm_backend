@@ -97,7 +97,16 @@ export class CreateEmployeeDto {
   @IsArray()
   @IsOptional()
   documents?: any[];
+
+  @IsString()
+  @IsOptional()
+  startTime?: string;
+
+  @IsString()
+  @IsOptional()
+  endTime?: string;
 }
+
 
 
 export class UpdateEmployeeDto {
@@ -167,4 +176,13 @@ export class UpdateEmployeeDto {
   @IsArray()
   @IsOptional()
   documents?: any[];
+
+  @IsString()
+  @IsOptional()
+  startTime?: string;
+
+  @IsString()
+  @IsOptional()
+  endTime?: string;
 }
+
