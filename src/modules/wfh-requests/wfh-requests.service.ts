@@ -55,7 +55,7 @@ export class WFHRequestsService {
     // Notify Admin
     try {
       await this.notificationsService.send({
-        title: 'New Work From Home Request',
+        title: 'Difmo Pvt Ltd: New Work From Home Request',
         message: `${employee.user?.firstName || 'An employee'} has requested Work From Home from ${dto.startDate} to ${dto.endDate}.`,
         type: 'both',
         recipientFilter: 'admin',
@@ -110,7 +110,7 @@ export class WFHRequestsService {
     // Notify Employee
     try {
       await this.notificationsService.send({
-        title: `Work From Home Request ${updated.status}`,
+        title: `Difmo Pvt Ltd: Work From Home Request ${updated.status}`,
         message: `Your Work From Home request has been ${updated.status.toLowerCase()}.`,
         type: 'both',
         recipientFilter: 'employees',

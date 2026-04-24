@@ -54,6 +54,17 @@ export class FinanceService {
     return inUsd * toRate;
   }
 
+  /**
+   * Cleans a currency string and converts to number
+   */
+  private parseSalary(salary: string | number): number {
+    if (typeof salary === 'number') return salary;
+    if (!salary) return 0;
+    // Remove ₹, commas, and other non-numeric chars except decimal point
+    const cleaned = String(salary).replace(/[^\d.]/g, '');
+    return parseFloat(cleaned) || 0;
+  }
+
   // Payroll
   async createPayroll(data: Partial<Payroll>): Promise<Payroll> {
     const payroll = await this.payrollRepository.save(this.payrollRepository.create(data));
@@ -65,9 +76,10 @@ export class FinanceService {
         relations: ['user']
       });
       if (emp && emp.userId) {
+        const netSal = this.parseSalary(payroll.netSalary);
         await this.notificationsService.send({
-          title: 'Payroll Slip Generated',
-          message: `Your payroll for ${payroll.month}/${payroll.year} has been generated. Net Salary: ₹${Number(payroll.netSalary).toFixed(2)}.`,
+          title: 'Difmo Pvt Ltd: Payroll Slip Generated',
+          message: `Your payroll for ${payroll.month}/${payroll.year} has been generated. Net Salary: ₹${netSal.toFixed(2)}.`,
           type: 'both',
           recipientFilter: 'employees',
           recipientIds: [emp.userId],
@@ -76,7 +88,7 @@ export class FinanceService {
             type: 'PAYROLL_GENERATED',
             month: payroll.month,
             year: payroll.year,
-            netSalary: Number(payroll.netSalary)
+            netSalary: netSal
           }
         });
       }
@@ -237,7 +249,7 @@ export class FinanceService {
         }
       }
 
-      const basicSalary = Number(emp.salary) || 20000; // Employee base salary
+      const basicSalary = this.parseSalary(emp.salary) || 20000; // Employee base salary
       const perDay = basicSalary / 30;
 
       // Leaves deduction logic: first 4 leaves free
@@ -277,7 +289,7 @@ export class FinanceService {
       // 🔥 Real-time Notification to Employee
       try {
         await this.notificationsService.send({
-          title: 'Payroll Generated',
+          title: 'Difmo Pvt Ltd: Payroll Generated',
           message: `Your payroll for ${month}/${year} has been generated. Net Salary: ₹${netSalary.toFixed(2)}.`,
           type: 'both',
           recipientFilter: 'employees',
@@ -337,7 +349,7 @@ export class FinanceService {
     if (!emp) throw new Error('Employee not found');
 
     // 3️⃣ Default settings (you can also store in DB if needed)
-    const basicSalary = Number(emp.salary) || 20000;
+    const basicSalary = this.parseSalary(emp.salary) || 20000;
     const workingHours = 8;       // per day
     const overtimeRate = 100;     // per hour
     const freeLeaves = 4;         // first 4 leaves free
@@ -502,9 +514,10 @@ export class FinanceService {
         relations: ['user']
       });
       if (emp && emp.userId) {
+        const netSal = this.parseSalary(payroll.netSalary);
         await this.notificationsService.send({
-          title: 'Salary Disbursed',
-          message: `Your salary for ${payroll.month}/${payroll.year} has been marked as PAID. Amount: ₹${Number(payroll.netSalary).toFixed(2)}.`,
+          title: 'Difmo Pvt Ltd: Salary Disbursed',
+          message: `Your salary for ${payroll.month}/${payroll.year} has been marked as PAID. Amount: ₹${netSal.toFixed(2)}.`,
           type: 'both',
           recipientFilter: 'employees',
           recipientIds: [emp.userId],
@@ -513,7 +526,7 @@ export class FinanceService {
             type: 'PAYROLL_PAID',
             month: payroll.month,
             year: payroll.year,
-            netSalary: Number(payroll.netSalary)
+            netSalary: netSal
           }
         });
       }

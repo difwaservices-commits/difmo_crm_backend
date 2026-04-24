@@ -67,7 +67,7 @@ export class LeavesService {
     //  Real-time Notification to Admin
     try {
       await this.notificationsService.send({
-        title: 'New Leave Request',
+        title: 'Difmo Pvt Ltd: New Leave Request',
         message: `${employee.user?.firstName || 'An employee'} has applied for leave from ${createLeaveDto.startDate} to ${createLeaveDto.endDate}.`,
         type: 'both',
         recipientFilter: 'admin',
@@ -144,7 +144,7 @@ export class LeavesService {
     // 1. Notification to Employee
     try {
       await this.notificationsService.send({
-        title: `Leave ${updatedLeave.status}`,
+        title: `Difmo Pvt Ltd: Leave ${updatedLeave.status}`,
         message: `Your leave application has been ${updatedLeave.status.toLowerCase()}.${updatedLeave.adminComment ? ` Admin Note: ${updatedLeave.adminComment}` : ''}`,
         type: 'both',
         recipientFilter: 'employees',
@@ -164,7 +164,7 @@ export class LeavesService {
     // 2. Notification to Admin (Both Side)
     try {
       await this.notificationsService.send({
-        title: `Leave Request ${updatedLeave.status.charAt(0) + updatedLeave.status.slice(1).toLowerCase()}`,
+        title: `Difmo Pvt Ltd: Leave Request ${updatedLeave.status.charAt(0) + updatedLeave.status.slice(1).toLowerCase()}`,
         message: `Leave request for ${updatedLeave.employee?.user?.firstName || 'Employee'} has been ${updatedLeave.status.toLowerCase()}.`,
         type: 'both',
         recipientFilter: 'admin',

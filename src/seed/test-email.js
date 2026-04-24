@@ -22,7 +22,7 @@ async function testEmail() {
   const mailOptions = {
     from: `"Difmo CRM Test" <${process.env.MAIL_USER}>`,
     to: 'ramjeekumaryadav558@gmail.com',
-    subject: 'Difmo Private Limited',
+    subject: 'Difmo Pvt Ltd - Test Email',
     text: 'If you receive this, the SMTP configuration for Difmo CRM is working correctly.',
     html: '<b>If you receive this, the SMTP configuration for Difmo CRM is working correctly.</b>'
   };

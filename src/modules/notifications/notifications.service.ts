@@ -124,7 +124,7 @@ export class NotificationsService implements OnModuleInit {
     // ─── Email Templates ─────────────────────────────────────────────────────────
 
     private getEmailTemplate(type: string, title: string, message: string, metadata: any = {}): string {
-        const logoUrl = 'https://via.placeholder.com/150?text=Difmo+CRM'; 
+        const logoUrl = 'https://via.placeholder.com/150?text=Difmo+Pvt+Ltd'; 
         const appUrl = this.configService.get('APP_URL') || 'http://localhost:3000';
         const baseStyle = `
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -176,6 +176,17 @@ export class NotificationsService implements OnModuleInit {
                     <a href="${appUrl}/employee/payroll" style="background-color: #10b981; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Download Payslip</a>
                 </div>
             `;
+        } else if (type === 'PAYROLL_PAID') {
+            content = `
+                <div style="background-color: #ecfdf5; border: 1px solid #10b981; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #065f46;">Salary Disbursed: ${metadata.month}/${metadata.year}</h3>
+                    <p style="font-size: 24px; font-weight: bold; color: #059669; margin: 10px 0;">₹${metadata.netSalary?.toFixed(2)}</p>
+                    <p style="margin-bottom: 0; color: #065f46;">Great news! Your salary has been credited to your account.</p>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="${appUrl}/employee/payroll" style="background-color: #059669; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Details</a>
+                </div>
+            `;
         } else if (type === 'TASK_ASSIGNED') {
             content = `
                 <div style="border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -203,15 +214,19 @@ export class NotificationsService implements OnModuleInit {
         return `
             <div style="${baseStyle}">
                 <div style="${headerStyle}">
-                    <img src="${logoUrl}" alt="Difmo CRM" style="height: 40px; margin-bottom: 10px;">
+                    <img src="${logoUrl}" alt="Difmo Pvt Ltd" style="height: 40px; margin-bottom: 10px;">
                     <h1 style="margin: 0; font-size: 20px;">Difmo Private Limited</h1>
                 </div>
                 <div style="${bodyStyle}">
                     ${content}
+                    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <p style="margin: 0; font-size: 14px; color: #4b5563;">Regards,</p>
+                        <p style="margin: 0; font-weight: bold; color: #111827;">Difmo Pvt Ltd Team</p>
+                    </div>
                 </div>
                 <div style="${footerStyle}">
-                    <p>&copy; ${new Date().getFullYear()} Difmo Project CRM. All rights reserved.</p>
-                    <p>You received this email because it's linked to your account at Difmo CRM.</p>
+                    <p>&copy; ${new Date().getFullYear()} Difmo Private Limited. All rights reserved.</p>
+                    <p>You received this email from Difmo Pvt Ltd CRM.</p>
                 </div>
             </div>
         `;
@@ -287,9 +302,10 @@ export class NotificationsService implements OnModuleInit {
         for (const email of emails) {
             try {
                 const htmlContent = this.getEmailTemplate(metadata.type, title, message, metadata);
+                const finalSubject = title.includes('Difmo') ? title : `Difmo Pvt Ltd - ${title}`;
                 await this.mailerService.sendMail({
                     to: email,
-                    subject: title,
+                    subject: finalSubject,
                     html: htmlContent,
                 });
                 success++;
