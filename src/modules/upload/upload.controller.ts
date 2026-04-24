@@ -9,6 +9,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { Express } from 'express';
 
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
