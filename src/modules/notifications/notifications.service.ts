@@ -204,7 +204,7 @@ export class NotificationsService implements OnModuleInit {
             <div style="${baseStyle}">
                 <div style="${headerStyle}">
                     <img src="${logoUrl}" alt="Difmo CRM" style="height: 40px; margin-bottom: 10px;">
-                    <h1 style="margin: 0; font-size: 20px;">Difmo CRM Notifications</h1>
+                    <h1 style="margin: 0; font-size: 20px;">Difmo Private Limited</h1>
                 </div>
                 <div style="${bodyStyle}">
                     ${content}

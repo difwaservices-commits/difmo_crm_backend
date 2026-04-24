@@ -6,3 +6,4 @@ coverage
 test-query.js
 verify-attendance-features.js
 db.sqlite
+/src/generated/prisma
